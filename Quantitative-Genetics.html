@@ -1,0 +1,4132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quantitative Genetics Discovery Lab — Individual-Level Simulation</title>
+  <style>
+    /* =========================================================================
+       DESIGN TOKENS & RESET (100% OFFLINE-SAFE, ZERO EXTERNAL DEPENDENCIES)
+       ========================================================================= */
+    :root {
+      --bg-app: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-sidebar: #0f172a;
+      --bg-sidebar-card: #1e293b;
+      --border-light: #e2e8f0;
+      --border-med: #cbd5e1;
+      --border-dark: #334155;
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-inverse: #f8fafc;
+      --emerald-500: #10b981;
+      --emerald-600: #059669;
+      --emerald-700: #047857;
+      --emerald-50: #ecfdf5;
+      --emerald-100: #d1fae5;
+      --sky-500: #0ea5e9;
+      --sky-600: #0284c7;
+      --sky-700: #0369a1;
+      --sky-50: #f0f9ff;
+      --amber-500: #f59e0b;
+      --amber-600: #d97706;
+      --amber-50: #fffbeb;
+      --rose-500: #f43f5e;
+      --rose-600: #e11d48;
+      --rose-50: #fff1f2;
+      --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07);
+      --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.16);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* =========================================================================
+       TOP NAVIGATION BAR
+       ========================================================================= */
+    .topbar {
+      background-color: var(--bg-sidebar);
+      color: var(--text-inverse);
+      border-bottom: 1px solid var(--border-dark);
+      padding: 0.75rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #059669, #0284c7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .topbar-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* Segmented Mode Switcher */
+    .mode-switch {
+      display: inline-flex;
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .mode-btn {
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.38rem 0.75rem;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .mode-btn:hover {
+      color: #f8fafc;
+    }
+
+    .mode-btn.active-sandbox {
+      background-color: var(--emerald-600);
+      color: #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .mode-btn.active-discovery {
+      background-color: var(--amber-600);
+      color: #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-top {
+      border: 1px solid #334155;
+      background-color: #1e293b;
+      color: #f1f5f9;
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 0.45rem 0.75rem;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-top:hover {
+      background-color: #334155;
+      border-color: #475569;
+    }
+
+    .btn-top.btn-emerald {
+      background-color: var(--emerald-600);
+      border-color: var(--emerald-500);
+      color: #fff;
+    }
+
+    .btn-top.btn-emerald:hover {
+      background-color: var(--emerald-500);
+    }
+
+    /* =========================================================================
+       MAIN WORKBENCH LAYOUT
+       ========================================================================= */
+    .workbench {
+      display: grid;
+      grid-template-columns: 350px minmax(0, 1fr);
+      min-height: calc(100vh - 61px);
+    }
+
+    @media (max-width: 1024px) {
+      .workbench {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Parameter Sidebar */
+    .sidebar {
+      background-color: #111827;
+      color: #e2e8f0;
+      border-right: 1px solid #1f2937;
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .side-card {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: var(--radius-md);
+      padding: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .side-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .lab-select {
+      width: 100%;
+      background-color: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .lab-select:focus {
+      border-color: var(--emerald-500);
+    }
+
+    /* Range Sliders */
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .slider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .slider-label {
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .slider-pill {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      background-color: #0f172a;
+      color: #34d399;
+      border: 1px solid #334155;
+      padding: 0.1rem 0.48rem;
+      border-radius: 6px;
+    }
+
+    input[type="range"].qg-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #0f172a;
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"].qg-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #0f172a;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"].qg-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.14);
+      background: #34d399;
+    }
+
+    input[type="range"].qg-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #0f172a;
+      cursor: pointer;
+    }
+
+    /* Live Algebraic Bridge Equations */
+    .eq-box {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 0.65rem 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .eq-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px dashed #1e293b;
+    }
+
+    .eq-line:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      font-size: 0.72rem;
+      line-height: 1.15;
+      margin: 0 2px;
+    }
+
+    .frac-num {
+      border-bottom: 1px solid #94a3b8;
+      padding: 0 4px 2px;
+    }
+
+    .frac-den {
+      padding: 2px 4px 0;
+    }
+
+    .val-em { color: #34d399; font-weight: 700; }
+    .val-sky { color: #38bdf8; font-weight: 700; }
+    .val-amb { color: #fbbf24; font-weight: 700; }
+    .val-rose { color: #fb7185; font-weight: 700; }
+
+    /* =========================================================================
+       RIGHT WORKSPACE & MODULE TABS
+       ========================================================================= */
+    .main-area {
+      padding: 1.25rem 1.5rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+      .main-area {
+        padding: 0.9rem;
+      }
+    }
+
+    /* 4 Module Tabs */
+    .module-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+    }
+
+    @media (max-width: 900px) {
+      .module-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 520px) {
+      .module-tabs {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tab-btn {
+      background-color: var(--bg-card);
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.9rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .tab-btn:hover {
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+    }
+
+    .tab-btn.active {
+      border-color: var(--emerald-600);
+      background: linear-gradient(to bottom right, #ffffff, #ecfdf5);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12);
+    }
+
+    .tab-step {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--emerald-700);
+    }
+
+    .tab-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .tab-eq {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    /* Cards & Grids */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.15rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .card-title {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .card-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .grid-3-2 {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 1.15rem;
+    }
+
+    @media (max-width: 960px) {
+      .grid-3-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Stat Tiles */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .stat-tile {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 0.65rem 0.75rem;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 0.15rem;
+    }
+
+    .stat-note {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+    }
+
+    /* Buttons inside workspace */
+    .btn {
+      border: 1px solid var(--border-med);
+      background-color: #ffffff;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.45rem 0.85rem;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.14s ease;
+    }
+
+    .btn:hover {
+      background-color: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .btn-primary {
+      background-color: var(--emerald-600);
+      border-color: var(--emerald-600);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--emerald-700);
+      border-color: var(--emerald-700);
+    }
+
+    .btn-sky {
+      background-color: var(--sky-600);
+      border-color: var(--sky-600);
+      color: #ffffff;
+    }
+
+    .btn-sky:hover {
+      background-color: var(--sky-700);
+    }
+
+    .btn-amber {
+      background-color: var(--amber-600);
+      border-color: var(--amber-600);
+      color: #ffffff;
+    }
+
+    .btn-amber:hover {
+      background-color: #b45309;
+    }
+
+    /* Canvas Wrapper */
+    .canvas-box {
+      position: relative;
+      width: 100%;
+      height: 290px;
+      border: 1px solid var(--border-light);
+      border-radius: 11px;
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+
+    .canvas-box.tall {
+      height: 360px;
+    }
+
+    .canvas-box.square-habitat {
+      height: 220px;
+      background-color: #1e293b;
+    }
+
+    canvas.plot-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Discovery Mode Checker Box */
+    .checker-card {
+      background: linear-gradient(to right, #fffbeb, #fefce8);
+      border: 1.5px solid #fcd34d;
+      border-radius: var(--radius-lg);
+      padding: 1.15rem 1.25rem;
+    }
+
+    .checker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+    }
+
+    .check-field {
+      background-color: #ffffff;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .check-field label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #78350f;
+    }
+
+    .check-input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      padding: 0.4rem 0.55rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .check-input:focus {
+      border-color: var(--amber-600);
+    }
+
+    .check-status {
+      font-size: 0.72rem;
+      font-weight: 600;
+      min-height: 1.1em;
+    }
+
+    .status-ok { color: var(--emerald-700); }
+    .status-close { color: var(--amber-600); }
+    .status-err { color: var(--rose-600); }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background-color: #f8fafc;
+      color: var(--text-secondary);
+      font-weight: 700;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      white-space: nowrap;
+    }
+
+    table.data-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      white-space: nowrap;
+    }
+
+    table.data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Pill Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .badge-emerald { background: var(--emerald-100); color: var(--emerald-700); }
+    .badge-sky { background: #e0f2fe; color: var(--sky-700); }
+    .badge-amber { background: #fef3c7; color: #b45309; }
+    .badge-rose { background: #ffe4e6; color: #be123c; }
+    .badge-slate { background: #e2e8f0; color: #334155; }
+
+    /* Tooltip & Toasts */
+    #chart-tooltip {
+      position: fixed;
+      z-index: 60;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.96);
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.74rem;
+      box-shadow: var(--shadow-lg);
+      display: none;
+    }
+
+    #toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 70;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      background-color: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-left: 4px solid var(--emerald-500);
+      padding: 0.65rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-panel {
+      background: #ffffff;
+      border-radius: 16px;
+      max-width: 780px;
+      width: 100%;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-head {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .modal-foot {
+      padding: 0.85rem 1.25rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating Chart Tooltip & Non-Blocking Toasts -->
+  <div id="chart-tooltip"></div>
+  <div id="toast-container"></div>
+
+  <!-- =========================================================================
+       TOP NAVIGATION BAR
+       ========================================================================= -->
+  <header class="topbar">
+    <div class="brand-group">
+      <div class="brand-badge">P=G+E</div>
+      <div>
+        <div class="brand-title">Quantitative Genetics Discovery Lab</div>
+        <div class="brand-sub">Individual-Level Simulation Engine (<span class="mono">P = &mu; + A + D + E + G&times;E</span>)</div>
+      </div>
+    </div>
+
+    <div class="topbar-controls">
+      <!-- Mode Switcher: Sandbox vs Discovery -->
+      <div class="mode-switch" role="group" aria-label="Laboratory Mode">
+        <button id="btn-mode-sandbox" type="button" class="mode-btn active-sandbox">
+          Sandbox Mode
+        </button>
+        <button id="btn-mode-discovery" type="button" class="mode-btn">
+          Discovery Mode (Student Lab)
+        </button>
+      </div>
+
+      <button id="btn-export-indiv-csv" type="button" class="btn-top btn-emerald" title="Download tidy row-per-individual CSV for R, Python, or Excel">
+        Export Individual CSV
+      </button>
+      <button id="btn-export-summary-csv" type="button" class="btn-top" title="Download experiment summary log CSV">
+        Export Summary Log CSV
+      </button>
+      <button id="btn-open-guide" type="button" class="btn-top">
+        Lab Equations Guide
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN WORKBENCH
+       ========================================================================= -->
+  <div class="workbench">
+    <!-- LEFT SIDEBAR: TRAIT, PARAMETERS / MYSTERY SCENARIO, LIVE ALGEBRAIC BRIDGE -->
+    <aside class="sidebar">
+      <!-- 1. Trait Preset Selector -->
+      <div class="side-card">
+        <div class="side-title">
+          <span>1) Focal Rabbit Trait</span>
+          <span id="trait-mu-badge" class="mono" style="color:#34d399;">&mu; = 55.0 mm</span>
+        </div>
+        <select id="select-trait" class="lab-select" aria-label="Select Focal Rabbit Trait">
+          <option value="hindlimb">Hindlimb Length (mm, &mu; = 55)</option>
+          <option value="ear">Ear Length (mm, &mu; = 65)</option>
+          <option value="sprint">Sprint Speed (dm/s, &mu; = 40)</option>
+          <option value="mass">Body Mass (hg, &mu; = 22)</option>
+        </select>
+        <div style="font-size:0.73rem; color:#94a3b8;">
+          Every individual is simulated from <span class="mono" style="color:#e2e8f0;">P<sub>i</sub> = &mu; + A<sub>i</sub> + D<sub>i</sub> + E<sub>i</sub> + (G&times;E)<sub>i</sub></span> via Mendelian inheritance.
+        </div>
+      </div>
+
+      <!-- 2A. SANDBOX MODE: True Variance Component Sliders -->
+      <div id="sandbox-params-card" class="side-card">
+        <div class="side-title">
+          <span>2) True Variance Components</span>
+          <button id="btn-reset-params" type="button" style="background:none;border:none;color:#38bdf8;font-size:0.72rem;cursor:pointer;text-decoration:underline;">Reset</button>
+        </div>
+
+        <!-- V_A -->
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="slider-va" class="slider-label">Additive Genetic (<span class="mono">V<sub>A</sub></span>)</label>
+            <span id="val-va" class="slider-pill">16.0</span>
+          </div>
+          <input id="slider-va" type="range" min="0" max="40" step="1" value="16" class="qg-slider" />
+        </div>
+
+        <!-- V_D -->
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="slider-vd" class="slider-label">Dominance (<span class="mono">V<sub>D</sub></span>)</label>
+            <span id="val-vd" class="slider-pill">4.0</span>
+          </div>
+          <input id="slider-vd" type="range" min="0" max="30" step="1" value="4" class="qg-slider" />
+        </div>
+
+        <!-- V_E -->
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="slider-ve" class="slider-label">Environmental (<span class="mono">V<sub>E</sub></span>)</label>
+            <span id="val-ve" class="slider-pill">12.0</span>
+          </div>
+          <input id="slider-ve" type="range" min="1" max="40" step="1" value="12" class="qg-slider" />
+        </div>
+
+        <!-- V_GxE -->
+        <div class="slider-row">
+          <div class="slider-header">
+            <label for="slider-vgxe" class="slider-label">Interaction (<span class="mono">V<sub>G&times;E</sub></span>)</label>
+            <span id="val-vgxe" class="slider-pill">0.0</span>
+          </div>
+          <input id="slider-vgxe" type="range" min="0" max="30" step="1" value="0" class="qg-slider" />
+        </div>
+
+        <button id="btn-run-sandbox" type="button" class="btn btn-primary" style="width:100%; margin-top:0.2rem;">
+          Re-Sample Current Experiment
+        </button>
+      </div>
+
+      <!-- 2B. DISCOVERY MODE: Mystery Scenario Selector -->
+      <div id="discovery-params-card" class="side-card hidden" style="border-color:#d97706;">
+        <div class="side-title">
+          <span style="color:#fbbf24;">2) Mystery Challenge Scenario</span>
+          <span id="mystery-code-pill" class="mono" style="color:#fbbf24;">MYST-1</span>
+        </div>
+
+        <select id="select-mystery" class="lab-select" aria-label="Select Mystery Scenario">
+          <option value="m1">Mystery Scenario 1: High-Heritability Morphology</option>
+          <option value="m2">Mystery Scenario 2: Dominance-Masked Fitness Trait</option>
+          <option value="m3">Mystery Scenario 3: Environment-Dominated Plasticity</option>
+          <option value="m4">Mystery Scenario 4: Strong G&times;E Crossover</option>
+          <option value="random">Random Mystery Scenario (Generated)</option>
+        </select>
+
+        <div style="display:flex; gap:0.5rem;">
+          <button id="btn-new-random-mystery" type="button" class="btn btn-amber" style="flex:1;">
+            New Random Mystery
+          </button>
+          <button id="btn-resample-mystery" type="button" class="btn" style="flex:1; background:#0f172a; color:#f8fafc; border-color:#475569;">
+            New Sample
+          </button>
+        </div>
+
+        <div style="font-size:0.74rem; color:#fde68a; background:rgba(120,53,15,0.35); border:1px solid #92400e; border-radius:8px; padding:0.55rem 0.65rem;">
+          <strong>Discovery Active:</strong> True <span class="mono">V<sub>A</sub></span>, <span class="mono">V<sub>D</sub></span>, <span class="mono">V<sub>E</sub></span>, <span class="mono">H&sup2;</span>, and <span class="mono">h&sup2;</span> are hidden—and latent genetic columns are redacted in exported CSVs!
+        </div>
+      </div>
+
+      <!-- 3. Module-Specific Experimental Protocol Controls -->
+      <div id="module-controls-card" class="side-card">
+        <div class="side-title">
+          <span>3) Experimental Design Controls</span>
+          <span id="mod-ctrl-badge" class="mono" style="color:#38bdf8;">EXP 1</span>
+        </div>
+        <div id="module-controls-body">
+          <!-- Dynamically populated per active module -->
+        </div>
+      </div>
+
+      <!-- 4. SANDBOX LIVE ALGEBRAIC BRIDGE -->
+      <div id="algebraic-bridge-card" class="side-card">
+        <div class="side-title">
+          <span>4) Live Algebraic Bridge</span>
+          <span style="color:#34d399; font-size:0.68rem;">REAL-TIME</span>
+        </div>
+        <div id="algebraic-bridge-body" class="eq-box">
+          <!-- Dynamically rendered equations with live values -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN WORKSPACE -->
+    <main class="main-area">
+      <!-- 4 Sequential Experimental Module Tabs -->
+      <nav class="module-tabs" aria-label="Quantitative Genetics Experimental Modules">
+        <button type="button" class="tab-btn active" data-module="1">
+          <span class="tab-step">Experiment 1</span>
+          <span class="tab-title">Clonal vs. Outbred Lines</span>
+          <span class="tab-eq">V<sub>P</sub> = V<sub>G</sub> + V<sub>E</sub> &bull; H&sup2;</span>
+        </button>
+
+        <button type="button" class="tab-btn" data-module="2">
+          <span class="tab-step">Experiment 2</span>
+          <span class="tab-title">Mid-Parent Regression</span>
+          <span class="tab-eq">h&sup2; = Cov(O,MP)/Var(MP)</span>
+        </button>
+
+        <button type="button" class="tab-btn" data-module="3">
+          <span class="tab-step">Experiment 3</span>
+          <span class="tab-title">Truncation Selection</span>
+          <span class="tab-eq">R = h&sup2; &times; S</span>
+        </button>
+
+        <button type="button" class="tab-btn" data-module="4">
+          <span class="tab-step">Experiment 4</span>
+          <span class="tab-title">Reciprocal Transplant</span>
+          <span class="tab-eq">V<sub>P</sub> = V<sub>G</sub> + V<sub>E</sub> + V<sub>G&times;E</sub></span>
+        </button>
+      </nav>
+
+      <!-- =====================================================================
+           MODULE 1 VIEW: CLONAL VS. OUTBRED LINES
+           ===================================================================== -->
+      <section id="view-mod-1" class="module-view" style="display:flex; flex-direction:column; gap:1.15rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Experiment 1: Isolating Environmental &amp; Genetic Variance (<span class="mono">V<sub>P</sub> = V<sub>G</sub> + V<sub>E</sub></span>)</h2>
+              <p class="card-sub">Rear an isogenic clonal line (<span class="mono">N = 300, V<sub>G</sub> = 0</span>) alongside an outbred wild population (<span class="mono">N = 300, V<sub>G</sub> = V<sub>A</sub> + V<sub>D</sub></span>) in the same habitat.</p>
+            </div>
+            <span class="badge badge-emerald">N = 600 Individuals</span>
+          </div>
+
+          <div class="stat-grid" id="mod1-stats"></div>
+        </div>
+
+        <div class="grid-3-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Phenotypic Frequency Distributions: Clonal vs. Outbred</h3>
+                <p class="card-sub">Clonal spread reflects purely <span class="mono">V<sub>E</sub></span>; wider outbred spread adds <span class="mono">V<sub>G</sub> = V<sub>A</sub> + V<sub>D</sub></span>.</p>
+              </div>
+              <div style="display:flex; gap:0.75rem; font-size:0.74rem; font-weight:600;">
+                <span style="color:#059669;">&#9632; Clonal (V<sub>G</sub>=0)</span>
+                <span style="color:#0284c7;">&#9632; Outbred (V<sub>G</sub>+V<sub>E</sub>)</span>
+              </div>
+            </div>
+            <div class="canvas-box">
+              <canvas id="canvas-mod1-hist" class="plot-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="display:flex; flex-direction:column; gap:0.85rem;">
+            <div>
+              <h3 class="card-title">Variance Partitioning &amp; Habitat Arena</h3>
+              <p class="card-sub">Visualizing micro-environmental heterogeneity and estimated variance shares.</p>
+            </div>
+            <div class="canvas-box" style="height:105px;">
+              <canvas id="canvas-mod1-bar" class="plot-canvas"></canvas>
+            </div>
+            <div class="canvas-box square-habitat" style="height:165px;">
+              <canvas id="canvas-mod1-habitat" class="plot-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           MODULE 2 VIEW: MID-PARENT VS. OFFSPRING REGRESSION
+           ===================================================================== -->
+      <section id="view-mod-2" class="module-view hidden" style="display:flex; flex-direction:column; gap:1.15rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Experiment 2: Mid-Parent vs. Offspring Regression (<span class="mono">h&sup2; = V<sub>A</sub> / V<sub>P</sub></span>)</h2>
+              <p class="card-sub">Simulate <span class="mono">N = 250</span> random mating pairs (<span class="mono">Sire + Dam &rarr; Offspring</span>) with Mendelian segregation (<span class="mono">0.5 V<sub>A</sub></span>).</p>
+            </div>
+            <span class="badge badge-sky">250 Families (750 Individuals)</span>
+          </div>
+
+          <div class="stat-grid" id="mod2-stats"></div>
+        </div>
+
+        <div class="grid-3-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Offspring Phenotype (<span class="mono">P<sub>O</sub></span>) vs. Mid-Parent Phenotype (<span class="mono">P<sub>MP</sub></span>)</h3>
+                <p class="card-sub">OLS regression slope <span class="mono">b<sub>O,MP</sub> = Cov(P<sub>O</sub>, P<sub>MP</sub>) / Var(P<sub>MP</sub>)</span> directly estimates narrow-sense <span class="mono">h&sup2;</span>.</p>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:0.65rem; font-size:0.73rem; font-weight:600;">
+                <span style="color:#e11d48;">&#9135; OLS Slope (h&sup2;)</span>
+                <span style="color:#64748b;">--- Slope = 1.0</span>
+                <span style="color:#94a3b8;">&middot;&middot;&middot; Slope = 0.0</span>
+              </div>
+            </div>
+            <div class="canvas-box tall">
+              <canvas id="canvas-mod2-scatter" class="plot-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; gap:0.85rem;">
+            <div>
+              <h3 class="card-title">Why Dominance (<span class="mono">V<sub>D</sub></span>) &amp; Environment (<span class="mono">V<sub>E</sub></span>) Flatten Slope</h3>
+              <p class="card-sub" style="margin-top:0.25rem;">
+                Parents pass single alleles—not diploid dominance combinations—to offspring. Thus:
+              </p>
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.75rem; margin-top:0.6rem; font-family:var(--font-mono); font-size:0.76rem; display:flex; flex-direction:column; gap:0.45rem;">
+                <div>Cov(P<sub>O</sub>, P<sub>MP</sub>) = &frac12; V<sub>A</sub></div>
+                <div>Var(P<sub>MP</sub>) = &frac12; V<sub>P</sub> = &frac12;(V<sub>A</sub> + V<sub>D</sub> + V<sub>E</sub>)</div>
+                <div style="color:#0369a1; font-weight:700;">b<sub>O,MP</sub> = (&frac12; V<sub>A</sub>) / (&frac12; V<sub>P</sub>) = V<sub>A</sub> / V<sub>P</sub> = h&sup2;</div>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Family</th>
+                    <th>Sire P</th>
+                    <th>Dam P</th>
+                    <th>Mid-Parent</th>
+                    <th>Offspring P</th>
+                  </tr>
+                </thead>
+                <tbody id="mod2-sample-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           MODULE 3 VIEW: TRUNCATION SELECTION & BREEDER'S EQUATION
+           ===================================================================== -->
+      <section id="view-mod-3" class="module-view hidden" style="display:flex; flex-direction:column; gap:1.15rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Experiment 3: Truncation Selection &amp; Breeder's Equation (<span class="mono">R = h&sup2; S</span>)</h2>
+              <p class="card-sub">Select top breeders from <span class="mono">G<sub>t</sub></span> (<span class="mono">N = 500</span>), mate them randomly, and measure evolutionary response in <span class="mono">G<sub>t+1</sub></span>.</p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+              <button id="btn-mod3-advance" type="button" class="btn btn-primary">Advance +1 Generation</button>
+              <button id="btn-mod3-reset" type="button" class="btn">Reset to G<sub>0</sub></button>
+            </div>
+          </div>
+
+          <div class="stat-grid" id="mod3-stats"></div>
+        </div>
+
+        <div class="grid-3-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Three-Tier Selection &amp; Response Distributions</h3>
+                <p class="card-sub">Aligned distributions showing <span class="mono">S = Z&#772;<sub>S</sub> &minus; Z&#772;<sub>t</sub></span> (selection differential) and <span class="mono">R = Z&#772;<sub>t+1</sub> &minus; Z&#772;<sub>t</sub></span> (response).</p>
+              </div>
+              <span id="mod3-gen-badge" class="badge badge-emerald">G0 &rarr; G1</span>
+            </div>
+            <div class="canvas-box tall">
+              <canvas id="canvas-mod3-dist" class="plot-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Multi-Generation Mean Trajectory</h3>
+                <p class="card-sub">Observed population mean vs. Breeder's Equation cumulative prediction.</p>
+              </div>
+            </div>
+            <div class="canvas-box tall">
+              <canvas id="canvas-mod3-traj" class="plot-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           MODULE 4 VIEW: SPLIT-FAMILY RECIPROCAL TRANSPLANT (G x E)
+           ===================================================================== -->
+      <section id="view-mod-4" class="module-view hidden" style="display:flex; flex-direction:column; gap:1.15rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Experiment 4: Split-Family Reciprocal Transplant (<span class="mono">G &times; E</span> Reaction Norms)</h2>
+              <p class="card-sub">Split <span class="mono">K = 12</span> full-sib families (<span class="mono">n = 15</span> sibs/cell; <span class="mono">N = 360</span>) across <em>Lush Meadow</em> and <em>Arid Scrub</em>.</p>
+            </div>
+            <span id="mod4-gxe-badge" class="badge badge-slate">ANOVA F-Test</span>
+          </div>
+
+          <div class="stat-grid" id="mod4-stats"></div>
+        </div>
+
+        <div class="grid-3-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Family Reaction Norms Across Contrasting Environments</h3>
+                <p class="card-sub">Parallel lines indicate additive <span class="mono">G + E</span>; crossing or diverging lines reveal <span class="mono">G &times; E</span> interaction.</p>
+              </div>
+            </div>
+            <div class="canvas-box tall">
+              <canvas id="canvas-mod4-norms" class="plot-canvas"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="display:flex; flex-direction:column; justify-content:space-between; gap:0.85rem;">
+            <div>
+              <h3 class="card-title">Two-Way ANOVA Variance Partitioning</h3>
+              <p class="card-sub">Decomposing total phenotypic variance into <span class="mono">V<sub>G (Fam)</sub></span>, <span class="mono">V<sub>E (Env)</sub></span>, <span class="mono">V<sub>G&times;E</sub></span>, and <span class="mono">V<sub>Error</sub></span>.</p>
+            </div>
+            <div class="canvas-box" style="height:175px;">
+              <canvas id="canvas-mod4-anova" class="plot-canvas"></canvas>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ANOVA Source</th>
+                    <th>df</th>
+                    <th>Mean Sq</th>
+                    <th>Est. Var Component</th>
+                  </tr>
+                </thead>
+                <tbody id="mod4-anova-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           DISCOVERY MODE: INTERACTIVE PARAMETER & EQUATION CHECKER
+           ===================================================================== -->
+      <section id="discovery-checker-section" class="checker-card hidden">
+        <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0.65rem;">
+          <div>
+            <span class="badge badge-amber">Student Lab Challenge &bull; Discovery Mode</span>
+            <h3 id="checker-title" style="font-size:0.98rem; font-weight:700; color:#78350f; margin-top:0.3rem;">
+              Derive the Hidden Quantitative Genetics Parameters
+            </h3>
+            <p id="checker-prompt" style="font-size:0.78rem; color:#92400e;">
+              Use the simulated experimental statistics and plots above to solve for the unknown variance components and ratios.
+            </p>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+            <button id="btn-check-answers" type="button" class="btn btn-amber">Check My Equations</button>
+            <button id="btn-toggle-hint" type="button" class="btn">Show Step-by-Step Hint</button>
+            <button id="btn-reveal-truth" type="button" class="btn">Reveal True Parameters</button>
+          </div>
+        </div>
+
+        <div id="checker-fields-container" class="checker-grid">
+          <!-- Populated dynamically per active module -->
+        </div>
+
+        <div id="checker-hint-box" class="hidden" style="margin-top:0.85rem; background:#ffffff; border:1px solid #fde68a; border-radius:10px; padding:0.75rem 0.9rem; font-size:0.78rem; color:#78350f;"></div>
+        <div id="checker-reveal-box" class="hidden" style="margin-top:0.85rem; background:#0f172a; color:#f8fafc; border-radius:10px; padding:0.75rem 0.9rem; font-family:var(--font-mono); font-size:0.78rem;"></div>
+      </section>
+
+      <!-- =====================================================================
+           EXPERIMENT SUMMARY LOG TABLE
+           ===================================================================== -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Recorded Experiment Summary Log</h3>
+            <p class="card-sub">Automatically logs each experimental run so you can compare across treatments or export to CSV.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button id="btn-log-snapshot" type="button" class="btn">+ Log Current Run</button>
+            <button id="btn-clear-log" type="button" class="btn" style="color:#e11d48;">Clear Log</button>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="max-height:210px; overflow-y:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Run</th>
+                <th>Mode</th>
+                <th>Module</th>
+                <th>Trait</th>
+                <th>Key Experimental Readout</th>
+                <th>Estimated Heritability / Interaction</th>
+              </tr>
+            </thead>
+            <tbody id="summary-log-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       LAB EQUATIONS GUIDE MODAL
+       ========================================================================= -->
+  <div id="guide-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <div>
+          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:#34d399; font-weight:700;">Quantitative Genetics Reference</div>
+          <h2 id="guide-modal-title" style="font-size:1.05rem; font-weight:700;">Core Equations &amp; Experimental Design Guide</h2>
+        </div>
+        <button id="btn-close-guide" type="button" style="background:none;border:none;color:#cbd5e1;font-size:1.3rem;cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div>
+          <h3 style="font-weight:700; color:#0f172a; margin-bottom:0.25rem;">1. Partitioning Phenotypic Value &amp; Variance</h3>
+          <p>Every individual's observable trait value <span class="mono">P</span> is decomposed into genetic and environmental deviations around the population mean <span class="mono">&mu;</span>:</p>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.7rem; margin-top:0.4rem; font-family:var(--font-mono); color:#0f172a;">
+            P = &mu; + A + D + E + (G &times; E)<br/>
+            V<sub>P</sub> = V<sub>A</sub> + V<sub>D</sub> + V<sub>E</sub> + V<sub>G&times;E</sub> = V<sub>G</sub> + V<sub>E</sub> + V<sub>G&times;E</sub>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-weight:700; color:#0f172a; margin-bottom:0.25rem;">2. Broad-Sense vs. Narrow-Sense Heritability</h3>
+          <p><strong>Broad-sense heritability (<span class="mono">H&sup2;</span>)</strong> measures the proportion of total phenotypic variance caused by all genetic factors (<span class="mono">V<sub>G</sub> = V<sub>A</sub> + V<sub>D</sub></span>). <strong>Narrow-sense heritability (<span class="mono">h&sup2;</span>)</strong> measures the proportion caused solely by additive breeding values (<span class="mono">V<sub>A</sub></span>), which govern parent-offspring resemblance and response to selection:</p>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.7rem; margin-top:0.4rem; font-family:var(--font-mono); color:#0f172a;">
+            H&sup2; = V<sub>G</sub> / V<sub>P</sub> = (V<sub>A</sub> + V<sub>D</sub>) / V<sub>P</sub><br/>
+            h&sup2; = V<sub>A</sub> / V<sub>P</sub> = Cov(P<sub>Offspring</sub>, P<sub>Mid-Parent</sub>) / Var(P<sub>Mid-Parent</sub>)
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-weight:700; color:#0f172a; margin-bottom:0.25rem;">3. The Breeder's Equation</h3>
+          <p>When truncation selection shifts the mean of selected parents by a selection differential <span class="mono">S = Z&#772;<sub>S</sub> &minus; Z&#772;<sub>0</sub></span>, the evolutionary response in the next generation <span class="mono">R = Z&#772;<sub>1</sub> &minus; Z&#772;<sub>0</sub></span> equals:</p>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:0.7rem; margin-top:0.4rem; font-family:var(--font-mono); color:#0f172a;">
+            R = h&sup2; &times; S &nbsp;&nbsp;&rArr;&nbsp;&nbsp; h&sup2;<sub>realized</sub> = R / S
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-weight:700; color:#0f172a; margin-bottom:0.25rem;">4. Genotype-by-Environment Interaction (<span class="mono">G &times; E</span>)</h3>
+          <p>When full-sibling families are reared across two contrasting environments (e.g., Lush Meadow vs. Arid Scrub), plotting family means across habitats reveals <strong>reaction norms</strong>. Parallel lines indicate <span class="mono">V<sub>G&times;E</sub> = 0</span>, whereas non-parallel or crossing slopes indicate significant <span class="mono">V<sub>G&times;E</sub> &gt; 0</span>.</p>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button id="btn-close-guide-foot" type="button" class="btn btn-primary">Return to Workbench</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       COMPLETE QUANTITATIVE GENETICS ENGINE & INTERACTIVE RENDERERS
+       ========================================================================= -->
+  <script>
+    (() => {
+      'use strict';
+
+      // =======================================================================
+      // 1. STATISTICAL & GAUSSIAN RNG HELPERS
+      // =======================================================================
+
+      /**
+       * Box-Muller Gaussian random variate generator.
+       */
+      function randomNormal(mean = 0, sd = 1) {
+        if (sd <= 0) return mean;
+        let u1 = 0;
+        let u2 = 0;
+        while (u1 === 0) u1 = Math.random();
+        while (u2 === 0) u2 = Math.random();
+        const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        return mean + z * sd;
+      }
+
+      function clamp(val, min, max) {
+        return Math.min(Math.max(val, min), max);
+      }
+
+      function mean(arr) {
+        if (!arr || arr.length === 0) return 0;
+        let s = 0;
+        for (let i = 0; i < arr.length; i++) s += arr[i];
+        return s / arr.length;
+      }
+
+      function variance(arr) {
+        if (!arr || arr.length < 2) return 0;
+        const m = mean(arr);
+        let ss = 0;
+        for (let i = 0; i < arr.length; i++) {
+          const d = arr[i] - m;
+          ss += d * d;
+        }
+        return ss / (arr.length - 1);
+      }
+
+      function covariance(xs, ys) {
+        const n = Math.min(xs.length, ys.length);
+        if (n < 2) return 0;
+        const mx = mean(xs);
+        const my = mean(ys);
+        let sp = 0;
+        for (let i = 0; i < n; i++) {
+          sp += (xs[i] - mx) * (ys[i] - my);
+        }
+        return sp / (n - 1);
+      }
+
+      function formatId(prefix, idx, padLen = 4) {
+        return `${prefix}-${String(idx).padStart(padLen, '0')}`;
+      }
+
+      // =======================================================================
+      // 2. TRAIT PRESETS & MYSTERY SCENARIOS
+      // =======================================================================
+
+      const TRAIT_PRESETS = {
+        hindlimb: {
+          key: 'hindlimb',
+          name: 'Hindlimb Length',
+          unit: 'mm',
+          mu: 55.0,
+          VA: 16.0,
+          VD: 4.0,
+          VE: 12.0,
+          VGxE: 0.0,
+          deltaE: -5.0,
+        },
+        ear: {
+          key: 'ear',
+          name: 'Ear Length',
+          unit: 'mm',
+          mu: 65.0,
+          VA: 20.0,
+          VD: 5.0,
+          VE: 15.0,
+          VGxE: 0.0,
+          deltaE: -6.0,
+        },
+        sprint: {
+          key: 'sprint',
+          name: 'Sprint Speed',
+          unit: 'dm/s',
+          mu: 40.0,
+          VA: 9.0,
+          VD: 6.0,
+          VE: 15.0,
+          VGxE: 0.0,
+          deltaE: -4.5,
+        },
+        mass: {
+          key: 'mass',
+          name: 'Body Mass',
+          unit: 'hg',
+          mu: 22.0,
+          VA: 4.0,
+          VD: 2.0,
+          VE: 6.0,
+          VGxE: 0.0,
+          deltaE: -2.5,
+        },
+      };
+
+      const MYSTERY_SCENARIOS = {
+        m1: {
+          code: 'MYST-1',
+          label: 'Mystery Scenario 1: High-Heritability Morphology',
+          VA: 24.0,
+          VD: 2.0,
+          VE: 6.0,
+          VGxE: 0.0,
+          deltaE: -6.0,
+        },
+        m2: {
+          code: 'MYST-2',
+          label: 'Mystery Scenario 2: Dominance-Masked Fitness Trait',
+          VA: 4.0,
+          VD: 18.0,
+          VE: 8.0,
+          VGxE: 0.0,
+          deltaE: -5.0,
+        },
+        m3: {
+          code: 'MYST-3',
+          label: 'Mystery Scenario 3: Environment-Dominated Plasticity',
+          VA: 3.0,
+          VD: 2.0,
+          VE: 25.0,
+          VGxE: 0.0,
+          deltaE: -7.5,
+        },
+        m4: {
+          code: 'MYST-4',
+          label: 'Mystery Scenario 4: Strong G×E Crossover',
+          VA: 12.0,
+          VD: 3.0,
+          VE: 9.0,
+          VGxE: 22.0,
+          deltaE: -5.5,
+        },
+      };
+
+      // =======================================================================
+      // 3. APPLICATION STATE
+      // =======================================================================
+
+      const state = {
+        mode: 'sandbox', // 'sandbox' | 'discovery'
+        activeModule: 1, // 1 | 2 | 3 | 4
+        traitKey: 'hindlimb',
+        // Active true variance parameters (either from Sandbox sliders or Mystery Scenario)
+        params: {
+          VA: 16.0,
+          VD: 4.0,
+          VE: 12.0,
+          VGxE: 0.0,
+        },
+        mysteryKey: 'm1',
+        mysteryCode: 'MYST-1',
+        mysteryRevealed: false,
+        hintVisible: false,
+
+        // Module-specific design controls
+        mod3: {
+          cutoffPct: 25,
+          direction: 'high', // 'high' | 'low'
+        },
+        mod4: {
+          deltaE: -5.0,
+        },
+
+        // Generated individual-level datasets & summary statistics per module
+        dataMod1: null,
+        dataMod2: null,
+        dataMod3: null,
+        dataMod4: null,
+
+        // Unified active individuals list for Individual CSV export
+        activeIndividuals: [],
+
+        // Experiment Summary Log
+        summaryLog: [],
+        runCount: 0,
+
+        // Interactive hover hitboxes for charts
+        hoverMaps: {},
+      };
+
+      function getCurrentTrait() {
+        return TRAIT_PRESETS[state.traitKey];
+      }
+
+      // =======================================================================
+      // 4. INDIVIDUAL-LEVEL QUANTITATIVE GENETICS GENERATORS
+      // =======================================================================
+
+      /**
+       * MODULE 1: Clonal Line (N=300, V_G=0) vs Outbred Population (N=300, V_G=V_A+V_D)
+       */
+      function runModule1() {
+        const trait = getCurrentTrait();
+        const { VA, VD, VE } = state.params;
+        const sdA = Math.sqrt(VA);
+        const sdD = Math.sqrt(VD);
+        const sdE = Math.sqrt(VE);
+
+        const individuals = [];
+        const clonalP = [];
+        const outbredP = [];
+        let idCounter = 1;
+
+        // 300 Isogenic Clonal Rabbits (A=0, D=0, GxE=0)
+        for (let i = 0; i < 300; i++) {
+          const E = randomNormal(0, sdE);
+          const P = trait.mu + E;
+          clonalP.push(P);
+          individuals.push({
+            id: formatId('R', idCounter++),
+            generation: 0,
+            lineType: 'clonal',
+            familyId: 'CLONE-ISO-1',
+            sireId: 'NA',
+            damId: 'NA',
+            environment: 'Common Meadow',
+            A: 0,
+            D: 0,
+            E,
+            GxE: 0,
+            P,
+            selected: false,
+            wx: Math.random() * 20 - 10,
+            wy: Math.random() * 20 - 10,
+          });
+        }
+
+        // 300 Outbred Wild Rabbits (A ~ N(0, VA), D ~ N(0, VD), E ~ N(0, VE))
+        for (let i = 0; i < 300; i++) {
+          const A = randomNormal(0, sdA);
+          const D = randomNormal(0, sdD);
+          const E = randomNormal(0, sdE);
+          const P = trait.mu + A + D + E;
+          outbredP.push(P);
+          individuals.push({
+            id: formatId('R', idCounter++),
+            generation: 0,
+            lineType: 'outbred',
+            familyId: 'OUTBRED-WILD',
+            sireId: 'NA',
+            damId: 'NA',
+            environment: 'Common Meadow',
+            A,
+            D,
+            E,
+            GxE: 0,
+            P,
+            selected: false,
+            wx: Math.random() * 20 - 10,
+            wy: Math.random() * 20 - 10,
+          });
+        }
+
+        const meanClonal = mean(clonalP);
+        const meanOutbred = mean(outbredP);
+        const estVE = variance(clonalP);
+        const estVP = variance(outbredP);
+        const estVG = Math.max(0, estVP - estVE);
+        const estH2 = estVP > 0 ? clamp(estVG / estVP, 0, 1) : 0;
+
+        // Generate 20x20 habitat patch colors whose patchiness reflects V_E
+        const patches = [];
+        const patchContrast = clamp(VE / 40, 0.05, 1.0);
+        for (let r = 0; r < 20; r++) {
+          const row = [];
+          for (let c = 0; c < 20; c++) {
+            const light = 28 + (Math.random() - 0.5) * 26 * patchContrast;
+            const hue = 132 + (Math.random() - 0.5) * 20 * patchContrast;
+            row.push(`hsl(${hue.toFixed(1)}, 48%, ${clamp(light, 15, 52).toFixed(1)}%)`);
+          }
+          patches.push(row);
+        }
+
+        state.dataMod1 = {
+          individuals,
+          clonalP,
+          outbredP,
+          meanClonal,
+          meanOutbred,
+          estVE,
+          estVP,
+          estVG,
+          estH2,
+          patches,
+        };
+      }
+
+      /**
+       * MODULE 2: Mid-Parent vs Offspring Regression (N=250 Mating Pairs)
+       * Uses exact Mendelian inheritance: A_off = 0.5*(A_sire + A_dam) + N(0, 0.5*V_A)
+       */
+      function runModule2() {
+        const trait = getCurrentTrait();
+        const { VA, VD, VE } = state.params;
+        const sdA = Math.sqrt(VA);
+        const sdD = Math.sqrt(VD);
+        const sdE = Math.sqrt(VE);
+        const sdMendelian = Math.sqrt(0.5 * VA);
+
+        const individuals = [];
+        const pairs = [];
+        let idCounter = 1;
+
+        for (let f = 1; f <= 250; f++) {
+          const famId = formatId('PAIR', f, 3);
+
+          // Sire (G0)
+          const sireId = formatId('R', idCounter++);
+          const As = randomNormal(0, sdA);
+          const Ds = randomNormal(0, sdD);
+          const Es = randomNormal(0, sdE);
+          const Ps = trait.mu + As + Ds + Es;
+
+          // Dam (G0)
+          const damId = formatId('R', idCounter++);
+          const Ad = randomNormal(0, sdA);
+          const Dd = randomNormal(0, sdD);
+          const Ed = randomNormal(0, sdE);
+          const Pd = trait.mu + Ad + Dd + Ed;
+
+          // Offspring (G1) via Mendelian segregation
+          const offId = formatId('R', idCounter++);
+          const Ao = 0.5 * (As + Ad) + randomNormal(0, sdMendelian);
+          const Do = randomNormal(0, sdD);
+          const Eo = randomNormal(0, sdE);
+          const Po = trait.mu + Ao + Do + Eo;
+
+          const Pmp = 0.5 * (Ps + Pd);
+
+          individuals.push(
+            {
+              id: sireId,
+              generation: 0,
+              lineType: 'outbred',
+              familyId: famId,
+              sireId: 'NA',
+              damId: 'NA',
+              environment: 'Common Meadow',
+              A: As,
+              D: Ds,
+              E: Es,
+              GxE: 0,
+              P: Ps,
+              selected: true,
+            },
+            {
+              id: damId,
+              generation: 0,
+              lineType: 'outbred',
+              familyId: famId,
+              sireId: 'NA',
+              damId: 'NA',
+              environment: 'Common Meadow',
+              A: Ad,
+              D: Dd,
+              E: Ed,
+              GxE: 0,
+              P: Pd,
+              selected: true,
+            },
+            {
+              id: offId,
+              generation: 1,
+              lineType: 'outbred',
+              familyId: famId,
+              sireId,
+              damId,
+              environment: 'Common Meadow',
+              A: Ao,
+              D: Do,
+              E: Eo,
+              GxE: 0,
+              P: Po,
+              selected: false,
+            }
+          );
+
+          pairs.push({
+            familyId: famId,
+            Ps,
+            Pd,
+            Pmp,
+            Po,
+          });
+        }
+
+        const xs = pairs.map((p) => p.Pmp);
+        const ys = pairs.map((p) => p.Po);
+        const meanMP = mean(xs);
+        const meanOff = mean(ys);
+        const varMP = variance(xs);
+        const varOff = variance(ys);
+        const covOMP = covariance(xs, ys);
+        const slope = varMP > 0 ? covOMP / varMP : 0;
+        const intercept = meanOff - slope * meanMP;
+        const estVP = 2 * varMP;
+        const estVA = clamp(slope, 0, 1) * estVP;
+        const estVDplusVE = Math.max(0, estVP - estVA);
+
+        // Residual standard error for 95% confidence band around regression line
+        let sse = 0;
+        for (let i = 0; i < pairs.length; i++) {
+          const pred = intercept + slope * xs[i];
+          const err = ys[i] - pred;
+          sse += err * err;
+        }
+        const sRes = Math.sqrt(sse / Math.max(1, pairs.length - 2));
+
+        state.dataMod2 = {
+          individuals,
+          pairs,
+          meanMP,
+          meanOff,
+          varMP,
+          varOff,
+          covOMP,
+          slope,
+          intercept,
+          estVP,
+          estVA,
+          estVDplusVE,
+          sRes,
+        };
+      }
+
+      /**
+       * MODULE 3: Truncation Selection & Breeder's Equation (R = h^2 * S)
+       * Supports initial G0 -> G1 generation and iterative Advance +1 Generation.
+       */
+      function createG0Generation(N = 500) {
+        const trait = getCurrentTrait();
+        const { VA, VD, VE } = state.params;
+        const sdA = Math.sqrt(VA);
+        const sdD = Math.sqrt(VD);
+        const sdE = Math.sqrt(VE);
+
+        const pop = [];
+        for (let i = 1; i <= N; i++) {
+          const A = randomNormal(0, sdA);
+          const D = randomNormal(0, sdD);
+          const E = randomNormal(0, sdE);
+          const P = trait.mu + A + D + E;
+          pop.push({
+            id: formatId('G0', i, 3),
+            generation: 0,
+            lineType: 'outbred',
+            familyId: 'SEL-POP',
+            sireId: 'NA',
+            damId: 'NA',
+            environment: 'Common Meadow',
+            A,
+            D,
+            E,
+            GxE: 0,
+            P,
+            selected: false,
+          });
+        }
+        return pop;
+      }
+
+      function breedNextGenerationFromParents(parentPop, nextGenIndex) {
+        const trait = getCurrentTrait();
+        const { VA, VD, VE, cutoffPct, direction } = {
+          ...state.params,
+          ...state.mod3,
+        };
+        const sdD = Math.sqrt(VD);
+        const sdE = Math.sqrt(VE);
+        const sdMendelian = Math.sqrt(0.5 * VA);
+
+        // Sort copy to identify truncation threshold
+        const sorted = [...parentPop].sort((a, b) =>
+          direction === 'high' ? b.P - a.P : a.P - b.P
+        );
+        const numBreeders = Math.max(2, Math.round((parentPop.length * cutoffPct) / 100));
+        const selectedSet = new Set(sorted.slice(0, numBreeders).map((ind) => ind.id));
+
+        const breeders = [];
+        for (const ind of parentPop) {
+          ind.selected = selectedSet.has(ind.id);
+          if (ind.selected) breeders.push(ind);
+        }
+
+        // Mate selected breeders randomly to produce N=500 offspring in nextGenIndex
+        const offspring = [];
+        for (let i = 1; i <= parentPop.length; i++) {
+          const idx1 = Math.floor(Math.random() * breeders.length);
+          let idx2 = Math.floor(Math.random() * breeders.length);
+          if (breeders.length > 1 && idx2 === idx1) {
+            idx2 = (idx1 + 1) % breeders.length;
+          }
+          const sire = breeders[idx1];
+          const dam = breeders[idx2];
+
+          const A = 0.5 * (sire.A + dam.A) + randomNormal(0, sdMendelian);
+          const D = randomNormal(0, sdD);
+          const E = randomNormal(0, sdE);
+          const P = trait.mu + A + D + E;
+
+          offspring.push({
+            id: formatId(`G${nextGenIndex}`, i, 3),
+            generation: nextGenIndex,
+            lineType: 'outbred',
+            familyId: `FAM-G${nextGenIndex}-${((i - 1) % 25) + 1}`,
+            sireId: sire.id,
+            damId: dam.id,
+            environment: 'Common Meadow',
+            A,
+            D,
+            E,
+            GxE: 0,
+            P,
+            selected: false,
+          });
+        }
+
+        const zParent = mean(parentPop.map((d) => d.P));
+        const zBreeder = mean(breeders.map((d) => d.P));
+        const zOffspring = mean(offspring.map((d) => d.P));
+        const S = zBreeder - zParent;
+        const R = zOffspring - zParent;
+        const realizedH2 = Math.abs(S) > 1e-6 ? R / S : 0;
+
+        return {
+          parentGen: nextGenIndex - 1,
+          offspringGen: nextGenIndex,
+          parents: parentPop,
+          breeders,
+          offspring,
+          zParent,
+          zBreeder,
+          zOffspring,
+          S,
+          R,
+          realizedH2,
+        };
+      }
+
+      function runModule3(resetToG0 = true) {
+        if (resetToG0 || !state.dataMod3) {
+          const g0 = createG0Generation(500);
+          const step0 = breedNextGenerationFromParents(g0, 1);
+          const trueH2 =
+            state.params.VA + state.params.VD + state.params.VE > 0
+              ? state.params.VA / (state.params.VA + state.params.VD + state.params.VE)
+              : 0;
+
+          state.dataMod3 = {
+            generations: [g0, step0.offspring],
+            steps: [step0],
+            trajectory: [
+              { gen: 0, mean: step0.zParent, predicted: step0.zParent },
+              {
+                gen: 1,
+                mean: step0.zOffspring,
+                predicted: step0.zParent + trueH2 * step0.S,
+              },
+            ],
+          };
+        } else {
+          // Recompute current latest transition when sliders/cutoff change
+          const gens = state.dataMod3.generations;
+          const parentGenIdx = gens.length - 2;
+          const parentPop = gens[parentGenIdx];
+          const updatedStep = breedNextGenerationFromParents(parentPop, parentGenIdx + 1);
+          gens[parentGenIdx + 1] = updatedStep.offspring;
+          state.dataMod3.steps[parentGenIdx] = updatedStep;
+
+          const trueH2 =
+            state.params.VA + state.params.VD + state.params.VE > 0
+              ? state.params.VA / (state.params.VA + state.params.VD + state.params.VE)
+              : 0;
+          const prevPred = state.dataMod3.trajectory[parentGenIdx].predicted;
+          state.dataMod3.trajectory[parentGenIdx + 1] = {
+            gen: parentGenIdx + 1,
+            mean: updatedStep.zOffspring,
+            predicted: prevPred + trueH2 * updatedStep.S,
+          };
+        }
+      }
+
+      function advanceModule3Generation() {
+        if (!state.dataMod3) {
+          runModule3(true);
+          return;
+        }
+        const gens = state.dataMod3.generations;
+        if (gens.length >= 6) {
+          showToast('Reached Generation G5. Resetting to G0 to start a fresh selection line.');
+          runModule3(true);
+          renderAll();
+          return;
+        }
+        const currentTopPop = gens[gens.length - 1];
+        const nextGenIdx = gens.length;
+        const nextStep = breedNextGenerationFromParents(currentTopPop, nextGenIdx);
+        gens.push(nextStep.offspring);
+        state.dataMod3.steps.push(nextStep);
+
+        const trueH2 =
+          state.params.VA + state.params.VD + state.params.VE > 0
+            ? state.params.VA / (state.params.VA + state.params.VD + state.params.VE)
+            : 0;
+        const prevPred = state.dataMod3.trajectory[nextGenIdx - 1].predicted;
+        state.dataMod3.trajectory.push({
+          gen: nextGenIdx,
+          mean: nextStep.zOffspring,
+          predicted: prevPred + trueH2 * nextStep.S,
+        });
+      }
+
+      /**
+       * MODULE 4: Split-Family Reciprocal Transplant (K=12 Full-Sib Families x 2 Habitats x n=15)
+       */
+      function runModule4() {
+        const trait = getCurrentTrait();
+        const { VA, VD, VE, VGxE } = state.params;
+        const deltaE = state.mod4.deltaE;
+
+        const K = 12; // 12 full-sib families
+        const n = 15; // 15 sibs per family per environment
+
+        // Full-sib family variance components:
+        // Shared family breeding value A_fam ~ N(0, 0.5*VA), within-family A_w ~ N(0, 0.5*VA)
+        // Shared family dominance D_fam ~ N(0, 0.25*VD), within-family D_w ~ N(0, 0.75*VD)
+        const sdAFam = Math.sqrt(0.5 * VA);
+        const sdAWithin = Math.sqrt(0.5 * VA);
+        const sdDFam = Math.sqrt(0.25 * VD);
+        const sdDWithin = Math.sqrt(0.75 * VD);
+        const sdEMicro = Math.sqrt(VE);
+        const sdSlope = Math.sqrt(2 * VGxE); // yields Var(GxE across 2 envs) = VGxE
+
+        const individuals = [];
+        const families = [];
+        let idCounter = 1;
+
+        for (let f = 1; f <= K; f++) {
+          const familyId = formatId('FAM', f, 2);
+          const sireId = formatId('SIRE', f, 2);
+          const damId = formatId('DAM', f, 2);
+
+          const Afam = randomNormal(0, sdAFam);
+          const Dfam = randomNormal(0, sdDFam);
+          const beta = randomNormal(0, sdSlope);
+
+          const env1Vals = [];
+          const env2Vals = [];
+
+          // Environment 1: Lush Meadow (High Water)
+          for (let i = 0; i < n; i++) {
+            const A = Afam + randomNormal(0, sdAWithin);
+            const D = Dfam + randomNormal(0, sdDWithin);
+            const E = randomNormal(0, sdEMicro);
+            const GxE = -0.5 * beta;
+            const P = trait.mu + A + D + E + GxE;
+            env1Vals.push(P);
+            individuals.push({
+              id: formatId('R', idCounter++),
+              generation: 1,
+              lineType: 'outbred',
+              familyId,
+              sireId,
+              damId,
+              environment: 'Lush Meadow (High Water)',
+              A,
+              D,
+              E,
+              GxE,
+              P,
+              selected: false,
+            });
+          }
+
+          // Environment 2: Arid Scrub (Drought)
+          for (let i = 0; i < n; i++) {
+            const A = Afam + randomNormal(0, sdAWithin);
+            const D = Dfam + randomNormal(0, sdDWithin);
+            const E = deltaE + randomNormal(0, sdEMicro);
+            const GxE = +0.5 * beta;
+            const P = trait.mu + A + D + E + GxE;
+            env2Vals.push(P);
+            individuals.push({
+              id: formatId('R', idCounter++),
+              generation: 1,
+              lineType: 'outbred',
+              familyId,
+              sireId,
+              damId,
+              environment: 'Arid Scrub (Drought)',
+              A,
+              D,
+              E,
+              GxE,
+              P,
+              selected: false,
+            });
+          }
+
+          const m1 = mean(env1Vals);
+          const m2 = mean(env2Vals);
+          const se1 = Math.sqrt(variance(env1Vals) / n);
+          const se2 = Math.sqrt(variance(env2Vals) / n);
+
+          families.push({
+            familyId,
+            env1Vals,
+            env2Vals,
+            mean1: m1,
+            mean2: m2,
+            se1,
+            se2,
+            slope: m2 - m1,
+          });
+        }
+
+        // Balanced Two-Way ANOVA (K=12 families, J=2 environments, n=15 per cell)
+        const J = 2;
+        const grandMean = mean(individuals.map((d) => d.P));
+        const meanEnv1 = mean(families.map((f) => f.mean1));
+        const meanEnv2 = mean(families.map((f) => f.mean2));
+
+        let ssFam = 0;
+        let ssEnv = K * n * ((meanEnv1 - grandMean) ** 2 + (meanEnv2 - grandMean) ** 2);
+        let ssGxE = 0;
+        let ssErr = 0;
+
+        for (const fam of families) {
+          const famMean = 0.5 * (fam.mean1 + fam.mean2);
+          ssFam += J * n * (famMean - grandMean) ** 2;
+
+          const int1 = fam.mean1 - famMean - meanEnv1 + grandMean;
+          const int2 = fam.mean2 - famMean - meanEnv2 + grandMean;
+          ssGxE += n * (int1 ** 2 + int2 ** 2);
+
+          for (const v of fam.env1Vals) ssErr += (v - fam.mean1) ** 2;
+          for (const v of fam.env2Vals) ssErr += (v - fam.mean2) ** 2;
+        }
+
+        const dfFam = K - 1; // 11
+        const dfEnv = J - 1; // 1
+        const dfGxE = (K - 1) * (J - 1); // 11
+        const dfErr = K * J * (n - 1); // 336
+
+        const msFam = ssFam / dfFam;
+        const msEnv = ssEnv / dfEnv;
+        const msGxE = ssGxE / dfGxE;
+        const msErr = ssErr / dfErr;
+
+        const estVError = msErr;
+        const estVGxE = Math.max(0, (msGxE - msErr) / n);
+        const estVFam = Math.max(0, (msFam - msGxE) / (J * n));
+        const estVGTotal = 2 * estVFam; // full-sib covariance = 0.5 VA + 0.25 VD
+        const estVEnv = Math.max(0, (msEnv - msGxE) / (K * n));
+        const fGxE = msErr > 0 ? msGxE / msErr : 0;
+        const sigGxE = fGxE > 1.82; // critical F(11, 336) at alpha = 0.05 is ~1.82
+
+        state.dataMod4 = {
+          individuals,
+          families,
+          grandMean,
+          meanEnv1,
+          meanEnv2,
+          estDeltaE: meanEnv2 - meanEnv1,
+          dfFam,
+          dfEnv,
+          dfGxE,
+          dfErr,
+          msFam,
+          msEnv,
+          msGxE,
+          msErr,
+          estVError,
+          estVGxE,
+          estVFam,
+          estVGTotal,
+          estVEnv,
+          fGxE,
+          sigGxE,
+        };
+      }
+
+      /**
+       * Runs the active module simulation and updates activeIndividuals for CSV export.
+       */
+      function runActiveModule(resetMod3 = true, logRun = false) {
+        if (state.activeModule === 1) {
+          runModule1();
+          state.activeIndividuals = state.dataMod1.individuals;
+        } else if (state.activeModule === 2) {
+          runModule2();
+          state.activeIndividuals = state.dataMod2.individuals;
+        } else if (state.activeModule === 3) {
+          runModule3(resetMod3);
+          const step = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+          state.activeIndividuals = [...step.parents, ...step.offspring];
+        } else if (state.activeModule === 4) {
+          runModule4();
+          state.activeIndividuals = state.dataMod4.individuals;
+        }
+
+        if (logRun) {
+          recordSummaryLogRow();
+        }
+      }
+
+      // =======================================================================
+      // 5. EXPERIMENT SUMMARY LOG & CSV EXPORT (WITH DISCOVERY REDACTION)
+      // =======================================================================
+
+      function recordSummaryLogRow() {
+        const trait = getCurrentTrait();
+        state.runCount += 1;
+        let readout = '';
+        let ratio = '';
+
+        if (state.activeModule === 1 && state.dataMod1) {
+          const d = state.dataMod1;
+          readout = `V_E=${d.estVE.toFixed(2)}, V_G=${d.estVG.toFixed(2)}, V_P=${d.estVP.toFixed(2)}`;
+          ratio = `H² = ${d.estH2.toFixed(3)}`;
+        } else if (state.activeModule === 2 && state.dataMod2) {
+          const d = state.dataMod2;
+          readout = `Cov=${d.covOMP.toFixed(2)}, Var(MP)=${d.varMP.toFixed(2)}`;
+          ratio = `h² (slope) = ${d.slope.toFixed(3)}`;
+        } else if (state.activeModule === 3 && state.dataMod3) {
+          const s = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+          readout = `G${s.parentGen}→G${s.offspringGen}: S=${s.S.toFixed(2)}, R=${s.R.toFixed(2)}`;
+          ratio = `Realized h² = ${s.realizedH2.toFixed(3)}`;
+        } else if (state.activeModule === 4 && state.dataMod4) {
+          const d = state.dataMod4;
+          readout = `ΔE=${d.estDeltaE.toFixed(2)}, V_G(fam)=${d.estVGTotal.toFixed(2)}, V_GxE=${d.estVGxE.toFixed(2)}`;
+          ratio = `F_GxE = ${d.fGxE.toFixed(2)} (${d.sigGxE ? 'Sig.' : 'NS'})`;
+        }
+
+        state.summaryLog.unshift({
+          run: state.runCount,
+          mode: state.mode === 'discovery' ? `Discovery (${state.mysteryCode})` : 'Sandbox',
+          module: `Exp ${state.activeModule}`,
+          trait: `${trait.name} (${trait.unit})`,
+          readout,
+          ratio,
+        });
+        renderSummaryLog();
+      }
+
+      function renderSummaryLog() {
+        const tbody = document.getElementById('summary-log-tbody');
+        if (!tbody) return;
+        if (state.summaryLog.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#64748b;padding:0.9rem;">No experimental runs logged yet.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = state.summaryLog
+          .map(
+            (r) => `
+          <tr>
+            <td class="mono" style="font-weight:700;">#${r.run}</td>
+            <td><span class="badge ${r.mode.startsWith('Discovery') ? 'badge-amber' : 'badge-emerald'}">${r.mode}</span></td>
+            <td style="font-weight:600;">${r.module}</td>
+            <td>${r.trait}</td>
+            <td class="mono">${r.readout}</td>
+            <td class="mono" style="font-weight:700;color:#0369a1;">${r.ratio}</td>
+          </tr>
+        `
+          )
+          .join('');
+      }
+
+      function triggerCSVDownload(filename, csvString) {
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function exportIndividualCSV() {
+        const redact = state.mode === 'discovery' && !state.mysteryRevealed;
+        const trait = getCurrentTrait();
+        const headers = [
+          'individual_id',
+          'module',
+          'trait',
+          'unit',
+          'generation',
+          'line_type',
+          'family_id',
+          'sire_id',
+          'dam_id',
+          'environment',
+          'phenotype_P',
+          'selected_breeder',
+          'true_A',
+          'true_D',
+          'true_E',
+          'true_GxE',
+        ];
+
+        const lines = [headers.join(',')];
+        for (const ind of state.activeIndividuals) {
+          lines.push(
+            [
+              ind.id,
+              `Module_${state.activeModule}`,
+              `"${trait.name}"`,
+              trait.unit,
+              ind.generation,
+              ind.lineType,
+              ind.familyId,
+              ind.sireId,
+              ind.damId,
+              `"${ind.environment}"`,
+              ind.P.toFixed(4),
+              ind.selected ? 1 : 0,
+              redact ? 'REDACTED' : ind.A.toFixed(4),
+              redact ? 'REDACTED' : ind.D.toFixed(4),
+              redact ? 'REDACTED' : ind.E.toFixed(4),
+              redact ? 'REDACTED' : ind.GxE.toFixed(4),
+            ].join(',')
+          );
+        }
+
+        const fname = redact
+          ? `qg_discovery_${state.mysteryCode.toLowerCase()}_mod${state.activeModule}_individuals.csv`
+          : `qg_sandbox_mod${state.activeModule}_individuals.csv`;
+        triggerCSVDownload(fname, lines.join('\n'));
+        showToast(
+          redact
+            ? 'Exported Individual CSV (true latent A, D, E, G×E redacted for Discovery Mode).'
+            : 'Exported full Individual CSV with latent genetic & environmental values.'
+        );
+      }
+
+      function exportSummaryCSV() {
+        const headers = ['Run', 'Mode', 'Module', 'Trait', 'Readout', 'Heritability_or_Interaction'];
+        const lines = [headers.join(',')];
+        for (const r of [...state.summaryLog].reverse()) {
+          lines.push(
+            [
+              r.run,
+              `"${r.mode}"`,
+              `"${r.module}"`,
+              `"${r.trait}"`,
+              `"${r.readout}"`,
+              `"${r.ratio}"`,
+            ].join(',')
+          );
+        }
+        triggerCSVDownload('qg_experiment_summary_log.csv', lines.join('\n'));
+        showToast('Exported Experiment Summary Log CSV.');
+      }
+
+      // =======================================================================
+      // 6. HIGH-DPI CANVAS CHART RENDERERS
+      // =======================================================================
+
+      function setupHiDPICanvas(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(10, Math.round(rect.width * dpr));
+        const h = Math.max(10, Math.round(rect.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { ctx, width: rect.width, height: rect.height };
+      }
+
+      /**
+       * Module 1 Overlaid Histogram (Clonal vs Outbred)
+       */
+      function drawModule1Histogram() {
+        const canvas = document.getElementById('canvas-mod1-hist');
+        if (!canvas || !state.dataMod1) return;
+        const { ctx, width, height } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, width, height);
+
+        const d = state.dataMod1;
+        const trait = getCurrentTrait();
+        const allVals = [...d.clonalP, ...d.outbredP];
+        const minV = Math.floor(Math.min(...allVals) - 2);
+        const maxV = Math.ceil(Math.max(...allVals) + 2);
+        const numBins = 28;
+        const binW = (maxV - minV) / numBins;
+
+        const clonalBins = new Array(numBins).fill(0);
+        const outbredBins = new Array(numBins).fill(0);
+
+        for (const v of d.clonalP) {
+          const idx = clamp(Math.floor((v - minV) / binW), 0, numBins - 1);
+          clonalBins[idx]++;
+        }
+        for (const v of d.outbredP) {
+          const idx = clamp(Math.floor((v - minV) / binW), 0, numBins - 1);
+          outbredBins[idx]++;
+        }
+
+        const maxCount = Math.max(10, ...clonalBins, ...outbredBins);
+        const yMax = Math.ceil(maxCount / 10) * 10;
+
+        const pad = { top: 20, right: 18, bottom: 36, left: 44 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+
+        // Grid & Y-axis
+        ctx.font = '10px ui-monospace, monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i <= 4; i++) {
+          const val = (yMax / 4) * i;
+          const y = pad.top + plotH - (val / yMax) * plotH;
+          ctx.strokeStyle = i === 0 ? '#94a3b8' : '#e2e8f0';
+          ctx.lineWidth = i === 0 ? 1.2 : 0.8;
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(pad.left + plotW, y);
+          ctx.stroke();
+
+          ctx.fillStyle = '#64748b';
+          ctx.fillText(Math.round(val).toString(), pad.left - 6, y);
+        }
+
+        // X-axis ticks
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let i = 0; i <= 5; i++) {
+          const val = minV + ((maxV - minV) / 5) * i;
+          const x = pad.left + ((val - minV) / (maxV - minV)) * plotW;
+          ctx.fillStyle = '#64748b';
+          ctx.fillText(val.toFixed(1), x, pad.top + plotH + 6);
+        }
+
+        ctx.font = '600 10.5px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillStyle = '#475569';
+        ctx.fillText(`${trait.name} (${trait.unit})`, pad.left + plotW / 2, height - 12);
+
+        const barPxW = plotW / numBins;
+
+        // Outbred Bars (Sky Blue)
+        for (let i = 0; i < numBins; i++) {
+          const c = outbredBins[i];
+          if (c <= 0) continue;
+          const bh = (c / yMax) * plotH;
+          const x = pad.left + i * barPxW;
+          const y = pad.top + plotH - bh;
+          ctx.fillStyle = 'rgba(2, 132, 199, 0.42)';
+          ctx.fillRect(x + 0.5, y, Math.max(1, barPxW - 1), bh);
+          ctx.strokeStyle = 'rgba(2, 132, 199, 0.85)';
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(x + 0.5, y, Math.max(1, barPxW - 1), bh);
+        }
+
+        // Clonal Bars (Emerald)
+        for (let i = 0; i < numBins; i++) {
+          const c = clonalBins[i];
+          if (c <= 0) continue;
+          const bh = (c / yMax) * plotH;
+          const x = pad.left + i * barPxW;
+          const y = pad.top + plotH - bh;
+          ctx.fillStyle = 'rgba(5, 150, 105, 0.55)';
+          ctx.fillRect(x + 1.5, y, Math.max(1, barPxW - 3), bh);
+          ctx.strokeStyle = '#047857';
+          ctx.lineWidth = 0.9;
+          ctx.strokeRect(x + 1.5, y, Math.max(1, barPxW - 3), bh);
+        }
+
+        state.hoverMaps['canvas-mod1-hist'] = {
+          pad,
+          plotW,
+          plotH,
+          minV,
+          binW,
+          numBins,
+          clonalBins,
+          outbredBins,
+          unit: trait.unit,
+        };
+      }
+
+      /**
+       * Module 1 Stacked Variance Bar + Habitat Arena Preview
+       */
+      function drawModule1SidePanels() {
+        const barCanvas = document.getElementById('canvas-mod1-bar');
+        if (barCanvas && state.dataMod1) {
+          const { ctx, width, height } = setupHiDPICanvas(barCanvas);
+          ctx.clearRect(0, 0, width, height);
+          const d = state.dataMod1;
+          const total = Math.max(0.001, d.estVE + d.estVG);
+          const fracE = d.estVE / total;
+          const fracG = d.estVG / total;
+
+          const padX = 14;
+          const barW = width - padX * 2;
+          const barY = 30;
+          const barH = 32;
+
+          ctx.font = '700 11px ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = '#0f172a';
+          ctx.textAlign = 'left';
+          ctx.fillText('Estimated Phenotypic Variance Partitioning (V_P = V_E + V_G)', padX, 18);
+
+          // V_E segment
+          const wE = barW * fracE;
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(padX, barY, wE, barH);
+
+          // V_G segment
+          const wG = barW * fracG;
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(padX + wE, barY, wG, barH);
+
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(padX, barY, barW, barH);
+
+          ctx.font = '700 10.5px ui-monospace, monospace';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          if (wE > 58) ctx.fillText(`V_E ${(fracE * 100).toFixed(0)}%`, padX + wE / 2, barY + barH / 2);
+          if (wG > 58) ctx.fillText(`V_G ${(fracG * 100).toFixed(0)}%`, padX + wE + wG / 2, barY + barH / 2);
+
+          ctx.font = '600 10.5px ui-monospace, monospace';
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#047857';
+          ctx.fillText(`V_E = ${d.estVE.toFixed(2)}`, padX, barY + barH + 8);
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#0369a1';
+          ctx.fillText(`V_G = ${d.estVG.toFixed(2)} (H² = ${d.estH2.toFixed(2)})`, padX + barW, barY + barH + 8);
+        }
+
+        const habCanvas = document.getElementById('canvas-mod1-habitat');
+        if (habCanvas && state.dataMod1) {
+          const { ctx, width, height } = setupHiDPICanvas(habCanvas);
+          ctx.clearRect(0, 0, width, height);
+          const d = state.dataMod1;
+          const cellW = width / 20;
+          const cellH = height / 20;
+
+          for (let r = 0; r < 20; r++) {
+            for (let c = 0; c < 20; c++) {
+              ctx.fillStyle = d.patches[r][c];
+              ctx.fillRect(c * cellW, r * cellH, Math.ceil(cellW), Math.ceil(cellH));
+            }
+          }
+
+          // Draw a representative sample of clonal (emerald) and outbred (white) rabbits
+          for (let i = 0; i < d.individuals.length; i += 3) {
+            const ind = d.individuals[i];
+            const px = ((ind.wx + 10) / 20) * width;
+            const py = ((ind.wy + 10) / 20) * height;
+            ctx.beginPath();
+            ctx.arc(px, py, 3.1, 0, Math.PI * 2);
+            ctx.fillStyle = ind.lineType === 'clonal' ? '#34d399' : '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+
+          // Corner caption badge
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+          ctx.fillRect(8, 8, 222, 22);
+          ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = '#f8fafc';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Common Meadow: Clonal (green) & Outbred (white)', 14, 19);
+        }
+      }
+
+      /**
+       * Module 2 Mid-Parent vs Offspring Regression Scatter Plot
+       */
+      function drawModule2Scatter() {
+        const canvas = document.getElementById('canvas-mod2-scatter');
+        if (!canvas || !state.dataMod2) return;
+        const { ctx, width, height } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, width, height);
+
+        const d = state.dataMod2;
+        const trait = getCurrentTrait();
+        const xs = d.pairs.map((p) => p.Pmp);
+        const ys = d.pairs.map((p) => p.Po);
+
+        const allVals = [...xs, ...ys];
+        const minV = Math.floor(Math.min(...allVals) - 2);
+        const maxV = Math.ceil(Math.max(...allVals) + 2);
+
+        const pad = { top: 20, right: 20, bottom: 38, left: 48 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+
+        const toX = (v) => pad.left + ((v - minV) / (maxV - minV)) * plotW;
+        const toY = (v) => pad.top + plotH - ((v - minV) / (maxV - minV)) * plotH;
+
+        // Gridlines
+        ctx.font = '10px ui-monospace, monospace';
+        for (let i = 0; i <= 5; i++) {
+          const val = minV + ((maxV - minV) / 5) * i;
+          const x = toX(val);
+          const y = toY(val);
+
+          ctx.strokeStyle = i === 0 ? '#94a3b8' : '#e2e8f0';
+          ctx.lineWidth = i === 0 ? 1.2 : 0.8;
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(pad.left + plotW, y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(x, pad.top);
+          ctx.lineTo(x, pad.top + plotH);
+          ctx.stroke();
+
+          ctx.fillStyle = '#64748b';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(val.toFixed(1), pad.left - 6, y);
+
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(val.toFixed(1), x, pad.top + plotH + 6);
+        }
+
+        // Axis labels
+        ctx.font = '600 10.5px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillStyle = '#334155';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Mid-Parent Phenotype P_MP (${trait.unit})`, pad.left + plotW / 2, height - 11);
+
+        ctx.save();
+        ctx.translate(13, pad.top + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(`Offspring Phenotype P_O (${trait.unit})`, 0, 0);
+        ctx.restore();
+
+        // Clip plot region
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(pad.left, pad.top, plotW, plotH);
+        ctx.clip();
+
+        // 1. 95% Confidence Band around OLS line
+        const n = d.pairs.length;
+        const ssX = Math.max(1e-6, (n - 1) * d.varMP);
+        ctx.fillStyle = 'rgba(225, 29, 72, 0.11)';
+        ctx.beginPath();
+        const steps = 40;
+        for (let i = 0; i <= steps; i++) {
+          const vx = minV + ((maxV - minV) / steps) * i;
+          const vy = d.intercept + d.slope * vx;
+          const seMean = d.sRes * Math.sqrt(1 / n + (vx - d.meanMP) ** 2 / ssX);
+          const py = toY(vy + 1.96 * seMean);
+          if (i === 0) ctx.moveTo(toX(vx), py);
+          else ctx.lineTo(toX(vx), py);
+        }
+        for (let i = steps; i >= 0; i--) {
+          const vx = minV + ((maxV - minV) / steps) * i;
+          const vy = d.intercept + d.slope * vx;
+          const seMean = d.sRes * Math.sqrt(1 / n + (vx - d.meanMP) ** 2 / ssX);
+          const py = toY(vy - 1.96 * seMean);
+          ctx.lineTo(toX(vx), py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Reference line: slope = 1.0 through (meanMP, meanOff)
+        ctx.save();
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(toX(minV), toY(d.meanOff + 1.0 * (minV - d.meanMP)));
+        ctx.lineTo(toX(maxV), toY(d.meanOff + 1.0 * (maxV - d.meanMP)));
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Reference line: slope = 0.0 through meanOff
+        ctx.save();
+        ctx.setLineDash([2, 3]);
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(toX(minV), toY(d.meanOff));
+        ctx.lineTo(toX(maxV), toY(d.meanOff));
+        ctx.stroke();
+        ctx.restore();
+
+        // 4. Scatter Points
+        const screenPts = [];
+        for (const p of d.pairs) {
+          const cx = toX(p.Pmp);
+          const cy = toY(p.Po);
+          screenPts.push({ cx, cy, pair: p });
+          ctx.beginPath();
+          ctx.arc(cx, cy, 2.8, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(2, 132, 199, 0.55)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+
+        // 5. OLS Best-Fit Line
+        ctx.strokeStyle = '#e11d48';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(toX(minV), toY(d.intercept + d.slope * minV));
+        ctx.lineTo(toX(maxV), toY(d.intercept + d.slope * maxV));
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Top-left equation badge inside chart
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.strokeStyle = '#fecdd3';
+        ctx.lineWidth = 1;
+        ctx.fillRect(pad.left + 8, pad.top + 8, 175, 24);
+        ctx.strokeRect(pad.left + 8, pad.top + 8, 175, 24);
+        ctx.font = '700 11px ui-monospace, monospace';
+        ctx.fillStyle = '#be123c';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`OLS Slope b = h² = ${d.slope.toFixed(3)}`, pad.left + 15, pad.top + 20);
+
+        state.hoverMaps['canvas-mod2-scatter'] = {
+          screenPts,
+          unit: trait.unit,
+        };
+      }
+
+      /**
+       * Module 3 Three-Tier Aligned Selection Distributions (Parents -> Selected Breeders -> Offspring)
+       */
+      function drawModule3Distributions() {
+        const canvas = document.getElementById('canvas-mod3-dist');
+        if (!canvas || !state.dataMod3) return;
+        const { ctx, width, height } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, width, height);
+
+        const step = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+        const trait = getCurrentTrait();
+        const pVals = step.parents.map((d) => d.P);
+        const bVals = step.breeders.map((d) => d.P);
+        const oVals = step.offspring.map((d) => d.P);
+
+        const allVals = [...pVals, ...oVals];
+        const minV = Math.floor(Math.min(...allVals) - 2);
+        const maxV = Math.ceil(Math.max(...allVals) + 2);
+        const numBins = 32;
+        const binW = (maxV - minV) / numBins;
+
+        const makeBins = (arr) => {
+          const bins = new Array(numBins).fill(0);
+          for (const v of arr) {
+            const idx = clamp(Math.floor((v - minV) / binW), 0, numBins - 1);
+            bins[idx]++;
+          }
+          return bins;
+        };
+
+        const pBins = makeBins(pVals);
+        const bBins = makeBins(bVals);
+        const oBins = makeBins(oVals);
+        const maxCount = Math.max(15, ...pBins, ...oBins);
+
+        const pad = { top: 16, right: 16, bottom: 32, left: 16 };
+        const plotW = width - pad.left - pad.right;
+        const totalH = height - pad.top - pad.bottom;
+        const tierH = totalH / 3;
+
+        const toX = (v) => pad.left + ((v - minV) / (maxV - minV)) * plotW;
+
+        const tiers = [
+          {
+            label: `1. Parental Generation G${step.parentGen} (Z̄_${step.parentGen} = ${step.zParent.toFixed(2)} ${trait.unit})`,
+            bins: pBins,
+            meanVal: step.zParent,
+            fill: 'rgba(71, 85, 105, 0.55)',
+            stroke: '#334155',
+            lineCol: '#0f172a',
+          },
+          {
+            label: `2. Selected Breeders (${state.mod3.cutoffPct}% Cutoff • Z̄_S = ${step.zBreeder.toFixed(2)} ${trait.unit})`,
+            bins: bBins,
+            meanVal: step.zBreeder,
+            fill: 'rgba(217, 119, 6, 0.65)',
+            stroke: '#b45309',
+            lineCol: '#b45309',
+          },
+          {
+            label: `3. Offspring Generation G${step.offspringGen} (Z̄_${step.offspringGen} = ${step.zOffspring.toFixed(2)} ${trait.unit})`,
+            bins: oBins,
+            meanVal: step.zOffspring,
+            fill: 'rgba(5, 150, 105, 0.58)',
+            stroke: '#047857',
+            lineCol: '#047857',
+          },
+        ];
+
+        const barPxW = plotW / numBins;
+
+        tiers.forEach((tier, tIdx) => {
+          const baseY = pad.top + (tIdx + 1) * tierH - 8;
+          const availH = tierH - 28;
+
+          // Baseline
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pad.left, baseY);
+          ctx.lineTo(pad.left + plotW, baseY);
+          ctx.stroke();
+
+          // Bars
+          for (let i = 0; i < numBins; i++) {
+            const c = tier.bins[i];
+            if (c <= 0) continue;
+            const bh = (c / maxCount) * availH;
+            ctx.fillStyle = tier.fill;
+            ctx.fillRect(pad.left + i * barPxW + 0.5, baseY - bh, Math.max(1, barPxW - 1), bh);
+            ctx.strokeStyle = tier.stroke;
+            ctx.lineWidth = 0.7;
+            ctx.strokeRect(pad.left + i * barPxW + 0.5, baseY - bh, Math.max(1, barPxW - 1), bh);
+          }
+
+          // Vertical Mean Line
+          const mx = toX(tier.meanVal);
+          ctx.save();
+          ctx.setLineDash([4, 3]);
+          ctx.strokeStyle = tier.lineCol;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(mx, baseY - availH - 4);
+          ctx.lineTo(mx, baseY + 3);
+          ctx.stroke();
+          ctx.restore();
+
+          // Tier Title
+          ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = '#0f172a';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          ctx.fillText(tier.label, pad.left + 4, pad.top + tIdx * tierH + 4);
+        });
+
+        // Annotate S arrow between Tier 1 & Tier 2 means
+        const xP = toX(step.zParent);
+        const xB = toX(step.zBreeder);
+        const xO = toX(step.zOffspring);
+
+        const yArrowS = pad.top + tierH + 18;
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xP, yArrowS);
+        ctx.lineTo(xB, yArrowS);
+        ctx.stroke();
+        ctx.font = '700 10px ui-monospace, monospace';
+        ctx.fillStyle = '#b45309';
+        ctx.textAlign = 'center';
+        ctx.fillText(`S = ${step.S >= 0 ? '+' : ''}${step.S.toFixed(2)}`, (xP + xB) / 2, yArrowS - 12);
+
+        // Annotate R arrow between Tier 1 & Tier 3 means
+        const yArrowR = pad.top + 2 * tierH + 18;
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xP, yArrowR);
+        ctx.lineTo(xO, yArrowR);
+        ctx.stroke();
+        ctx.fillStyle = '#047857';
+        ctx.fillText(`R = ${step.R >= 0 ? '+' : ''}${step.R.toFixed(2)}`, (xP + xO) / 2, yArrowR - 12);
+
+        // X-axis ticks
+        ctx.font = '10px ui-monospace, monospace';
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let i = 0; i <= 5; i++) {
+          const val = minV + ((maxV - minV) / 5) * i;
+          ctx.fillText(val.toFixed(1), toX(val), height - 22);
+        }
+      }
+
+      /**
+       * Module 3 Multi-Generation Trajectory Chart
+       */
+      function drawModule3Trajectory() {
+        const canvas = document.getElementById('canvas-mod3-traj');
+        if (!canvas || !state.dataMod3) return;
+        const { ctx, width, height } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, width, height);
+
+        const traj = state.dataMod3.trajectory;
+        const trait = getCurrentTrait();
+        const vals = traj.flatMap((t) => [t.mean, t.predicted]);
+        const minV = Math.floor(Math.min(...vals) - 2);
+        const maxV = Math.ceil(Math.max(...vals) + 2);
+
+        const pad = { top: 26, right: 20, bottom: 38, left: 46 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+
+        const maxGen = Math.max(1, traj.length - 1);
+        const toX = (g) => pad.left + (g / maxGen) * plotW;
+        const toY = (v) => pad.top + plotH - ((v - minV) / Math.max(0.1, maxV - minV)) * plotH;
+
+        // Grid
+        ctx.font = '10px ui-monospace, monospace';
+        for (let i = 0; i <= 4; i++) {
+          const val = minV + ((maxV - minV) / 4) * i;
+          const y = toY(val);
+          ctx.strokeStyle = i === 0 ? '#94a3b8' : '#e2e8f0';
+          ctx.lineWidth = i === 0 ? 1.2 : 0.8;
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(pad.left + plotW, y);
+          ctx.stroke();
+
+          ctx.fillStyle = '#64748b';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(val.toFixed(1), pad.left - 6, y);
+        }
+
+        // Generation X ticks
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        for (let g = 0; g <= maxGen; g++) {
+          const x = toX(g);
+          ctx.fillStyle = '#475569';
+          ctx.fillText(`G${g}`, x, pad.top + plotH + 7);
+        }
+
+        // Predicted Dashed Line (shown in Sandbox mode or once Truth revealed)
+        if (state.mode === 'sandbox' || state.mysteryRevealed) {
+          ctx.save();
+          ctx.setLineDash([5, 4]);
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          traj.forEach((pt, idx) => {
+            const x = toX(pt.gen);
+            const y = toY(pt.predicted);
+            if (idx === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Observed Mean Solid Line
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        traj.forEach((pt, idx) => {
+          const x = toX(pt.gen);
+          const y = toY(pt.mean);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Points & Value Labels
+        traj.forEach((pt) => {
+          const x = toX(pt.gen);
+          const y = toY(pt.mean);
+          ctx.beginPath();
+          ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#059669';
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.font = '700 10px ui-monospace, monospace';
+          ctx.fillStyle = '#065f46';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(pt.mean.toFixed(1), x, y - 7);
+        });
+
+        // Legend
+        ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#059669';
+        ctx.fillText(`● Observed Mean (${trait.unit})`, pad.left + 6, 12);
+        if (state.mode === 'sandbox' || state.mysteryRevealed) {
+          ctx.fillStyle = '#0284c7';
+          ctx.fillText('--- Predicted (Σ h²S)', pad.left + 145, 12);
+        }
+      }
+
+      /**
+       * Module 4 Reaction Norm Plot (12 Full-Sib Families across 2 Habitats)
+       */
+      function drawModule4ReactionNorms() {
+        const canvas = document.getElementById('canvas-mod4-norms');
+        if (!canvas || !state.dataMod4) return;
+        const { ctx, width, height } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, width, height);
+
+        const d = state.dataMod4;
+        const trait = getCurrentTrait();
+        const allMeans = d.families.flatMap((f) => [f.mean1 - f.se1, f.mean1 + f.se1, f.mean2 - f.se2, f.mean2 + f.se2]);
+        const minV = Math.floor(Math.min(...allMeans) - 2);
+        const maxV = Math.ceil(Math.max(...allMeans) + 2);
+
+        const pad = { top: 24, right: 48, bottom: 42, left: 52 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+
+        const xEnv1 = pad.left + plotW * 0.22;
+        const xEnv2 = pad.left + plotW * 0.78;
+        const toY = (v) => pad.top + plotH - ((v - minV) / Math.max(0.1, maxV - minV)) * plotH;
+
+        // Horizontal gridlines
+        ctx.font = '10px ui-monospace, monospace';
+        for (let i = 0; i <= 5; i++) {
+          const val = minV + ((maxV - minV) / 5) * i;
+          const y = toY(val);
+          ctx.strokeStyle = i === 0 ? '#94a3b8' : '#e2e8f0';
+          ctx.lineWidth = i === 0 ? 1.2 : 0.8;
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(pad.left + plotW, y);
+          ctx.stroke();
+
+          ctx.fillStyle = '#64748b';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(val.toFixed(1), pad.left - 8, y);
+        }
+
+        // Vertical habitat guides
+        [xEnv1, xEnv2].forEach((xPos) => {
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(xPos, pad.top);
+          ctx.lineTo(xPos, pad.top + plotH);
+          ctx.stroke();
+        });
+
+        // X Habitat Labels
+        ctx.font = '700 11px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillStyle = '#047857';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Lush Meadow (High Water)', xEnv1, pad.top + plotH + 10);
+
+        ctx.fillStyle = '#b45309';
+        ctx.fillText('Arid Scrub (Drought)', xEnv2, pad.top + plotH + 10);
+
+        // Y-axis title
+        ctx.save();
+        ctx.translate(14, pad.top + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = '#334155';
+        ctx.fillText(`Family Mean ${trait.name} (${trait.unit})`, 0, 0);
+        ctx.restore();
+
+        // Distinct color palette for 12 full-sib families
+        const palette = [
+          '#0284c7', '#059669', '#d97706', '#e11d48',
+          '#7c3aed', '#0891b2', '#4f46e5', '#db2777',
+          '#65a30d', '#ea580c', '#2563eb', '#0d9488',
+        ];
+
+        const hitSegments = [];
+
+        d.families.forEach((fam, idx) => {
+          const col = palette[idx % palette.length];
+          const y1 = toY(fam.mean1);
+          const y2 = toY(fam.mean2);
+
+          // Reaction norm connecting line
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 1.9;
+          ctx.beginPath();
+          ctx.moveTo(xEnv1, y1);
+          ctx.lineTo(xEnv2, y2);
+          ctx.stroke();
+
+          // Error bars (+/- 1 SE)
+          const drawSE = (x, meanVal, seVal) => {
+            const yTop = toY(meanVal + seVal);
+            const yBot = toY(meanVal - seVal);
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(x, yTop);
+            ctx.lineTo(x, yBot);
+            ctx.moveTo(x - 3, yTop);
+            ctx.lineTo(x + 3, yTop);
+            ctx.moveTo(x - 3, yBot);
+            ctx.lineTo(x + 3, yBot);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(x, toY(meanVal), 3.6, 0, Math.PI * 2);
+            ctx.fillStyle = col;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          };
+
+          drawSE(xEnv1, fam.mean1, fam.se1);
+          drawSE(xEnv2, fam.mean2, fam.se2);
+
+          hitSegments.push({ x1: xEnv1, y1, x2: xEnv2, y2, fam });
+        });
+
+        // Bold Dashed Population Environment Mean Line
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(xEnv1, toY(d.meanEnv1));
+        ctx.lineTo(xEnv2, toY(d.meanEnv2));
+        ctx.stroke();
+        ctx.restore();
+
+        state.hoverMaps['canvas-mod4-norms'] = {
+          hitSegments,
+          unit: trait.unit,
+        };
+      }
+
+      /**
+       * Module 4 Two-Way ANOVA Variance Partitioning Bar Chart
+       */
+      function drawModule4AnovaBar() {
+        const canvas = document.getElementById('canvas-mod4-anova');
+        if (!canvas || !state.dataMod4) return;
+        const { ctx, width, height } = setupHiDPICanvas(canvas);
+        ctx.clearRect(0, 0, width, height);
+
+        const d = state.dataMod4;
+        const items = [
+          { label: 'Genetic V_G (Fam)', val: d.estVGTotal, color: '#0284c7' },
+          { label: 'Environment V_E', val: d.estVEnv, color: '#10b981' },
+          { label: 'Interaction V_G×E', val: d.estVGxE, color: '#e11d48' },
+          { label: 'Within-Fam Error', val: d.estVError, color: '#64748b' },
+        ];
+
+        const maxVal = Math.max(1, ...items.map((it) => it.val));
+        const pad = { top: 14, right: 54, bottom: 14, left: 118 };
+        const plotW = width - pad.left - pad.right;
+        const plotH = height - pad.top - pad.bottom;
+        const rowH = plotH / items.length;
+
+        items.forEach((it, idx) => {
+          const cy = pad.top + idx * rowH + rowH / 2;
+          const bh = Math.min(20, rowH * 0.62);
+          const bw = (it.val / maxVal) * plotW;
+
+          ctx.font = '600 10.5px ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = '#334155';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(it.label, pad.left - 8, cy);
+
+          // Track background
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(pad.left, cy - bh / 2, plotW, bh);
+
+          // Value bar
+          ctx.fillStyle = it.color;
+          ctx.fillRect(pad.left, cy - bh / 2, Math.max(2, bw), bh);
+
+          ctx.font = '700 10.5px ui-monospace, monospace';
+          ctx.fillStyle = '#0f172a';
+          ctx.textAlign = 'left';
+          ctx.fillText(it.val.toFixed(2), pad.left + bw + 6, cy);
+        });
+      }
+
+      // =======================================================================
+      // 7. DOM UI RENDERERS (STATS, EQUATION BRIDGE, CHECKERS, CONTROLS)
+      // =======================================================================
+
+      function renderLiveAlgebraicBridge() {
+        const box = document.getElementById('algebraic-bridge-body');
+        if (!box) return;
+        const { VA, VD, VE, VGxE } = state.params;
+        const VG = VA + VD;
+        const VP = VG + VE + VGxE;
+        const H2 = VP > 0 ? VG / VP : 0;
+        const h2 = VP > 0 ? VA / VP : 0;
+
+        const currentS =
+          state.dataMod3 && state.dataMod3.steps.length > 0
+            ? state.dataMod3.steps[state.dataMod3.steps.length - 1].S
+            : 4.0;
+        const predR = h2 * currentS;
+
+        box.innerHTML = `
+          <div class="eq-line">
+            <span>V<sub>G</sub> = V<sub>A</sub> + V<sub>D</sub> =</span>
+            <span class="val-em">${VA.toFixed(1)}</span> + <span class="val-sky">${VD.toFixed(1)}</span> =
+            <span class="val-em">${VG.toFixed(1)}</span>
+          </div>
+          <div class="eq-line">
+            <span>V<sub>P</sub> = V<sub>G</sub> + V<sub>E</sub>${VGxE > 0 ? ' + V<sub>G&times;E</sub>' : ''} =</span>
+            <span class="val-em">${VG.toFixed(1)}</span> + <span class="val-amb">${VE.toFixed(1)}</span>${VGxE > 0 ? ` + <span class="val-rose">${VGxE.toFixed(1)}</span>` : ''} =
+            <span style="font-weight:700;color:#fff;">${VP.toFixed(1)}</span>
+          </div>
+          <div class="eq-line">
+            <span>H&sup2; =</span>
+            <span class="frac"><span class="frac-num">V<sub>G</sub></span><span class="frac-den">V<sub>P</sub></span></span>
+            <span>=</span>
+            <span class="frac"><span class="frac-num val-em">${VG.toFixed(1)}</span><span class="frac-den">${VP.toFixed(1)}</span></span>
+            <span>= <span class="val-em">${H2.toFixed(3)}</span></span>
+          </div>
+          <div class="eq-line">
+            <span>h&sup2; =</span>
+            <span class="frac"><span class="frac-num">V<sub>A</sub></span><span class="frac-den">V<sub>P</sub></span></span>
+            <span>=</span>
+            <span class="frac"><span class="frac-num val-sky">${VA.toFixed(1)}</span><span class="frac-den">${VP.toFixed(1)}</span></span>
+            <span>= <span class="val-sky">${h2.toFixed(3)}</span></span>
+          </div>
+          <div class="eq-line">
+            <span>R = h&sup2; &times; S = <span class="val-sky">${h2.toFixed(3)}</span> &times; <span class="val-amb">${currentS.toFixed(2)}</span> = <span class="val-rose">${predR.toFixed(2)}</span></span>
+          </div>
+        `;
+      }
+
+      function renderModuleControls() {
+        const badge = document.getElementById('mod-ctrl-badge');
+        const body = document.getElementById('module-controls-body');
+        if (!badge || !body) return;
+        badge.textContent = `EXP ${state.activeModule}`;
+
+        if (state.activeModule === 1) {
+          body.innerHTML = `
+            <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.45;">
+              Rears <strong>300 Clonal</strong> (<span class="mono">V<sub>G</sub>=0</span>) and <strong>300 Outbred</strong> rabbits in a common habitat to separate <span class="mono">V<sub>E</sub></span> from <span class="mono">V<sub>G</sub></span>.
+            </div>
+            <button id="btn-mod1-rerun" type="button" class="btn btn-primary" style="width:100%; margin-top:0.65rem;">
+              Generate New Cohort (N = 600)
+            </button>
+          `;
+          document.getElementById('btn-mod1-rerun').addEventListener('click', () => {
+            runActiveModule(true, true);
+            renderAll();
+          });
+        } else if (state.activeModule === 2) {
+          body.innerHTML = `
+            <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.45;">
+              Pairs <strong>250 Sires &amp; Dams</strong> randomly and measures 1 offspring per family under Mendelian segregation.
+            </div>
+            <button id="btn-mod2-rerun" type="button" class="btn btn-sky" style="width:100%; margin-top:0.65rem;">
+              Breed New 250 Families
+            </button>
+          `;
+          document.getElementById('btn-mod2-rerun').addEventListener('click', () => {
+            runActiveModule(true, true);
+            renderAll();
+          });
+        } else if (state.activeModule === 3) {
+          body.innerHTML = `
+            <div class="slider-row">
+              <div class="slider-header">
+                <label for="slider-sel-cutoff" class="slider-label">Selection Cutoff (% Kept)</label>
+                <span id="val-sel-cutoff" class="slider-pill">${state.mod3.cutoffPct}%</span>
+              </div>
+              <input id="slider-sel-cutoff" type="range" min="10" max="80" step="5" value="${state.mod3.cutoffPct}" class="qg-slider" />
+            </div>
+            <div style="margin-top:0.65rem;">
+              <label for="select-sel-dir" style="display:block;font-size:0.76rem;font-weight:600;color:#cbd5e1;margin-bottom:0.25rem;">Selection Direction</label>
+              <select id="select-sel-dir" class="lab-select">
+                <option value="high" ${state.mod3.direction === 'high' ? 'selected' : ''}>Directional High (Larger Trait)</option>
+                <option value="low" ${state.mod3.direction === 'low' ? 'selected' : ''}>Directional Low (Smaller Trait)</option>
+              </select>
+            </div>
+          `;
+          document.getElementById('slider-sel-cutoff').addEventListener('input', (e) => {
+            state.mod3.cutoffPct = Number(e.target.value);
+            document.getElementById('val-sel-cutoff').textContent = `${state.mod3.cutoffPct}%`;
+            runModule3(false);
+            const step = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+            state.activeIndividuals = [...step.parents, ...step.offspring];
+            renderAll();
+          });
+          document.getElementById('select-sel-dir').addEventListener('change', (e) => {
+            state.mod3.direction = e.target.value;
+            runModule3(false);
+            const step = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+            state.activeIndividuals = [...step.parents, ...step.offspring];
+            renderAll();
+          });
+        } else if (state.activeModule === 4) {
+          body.innerHTML = `
+            <div class="slider-row">
+              <div class="slider-header">
+                <label for="slider-delta-e" class="slider-label">Arid Habitat Shift (<span class="mono">&Delta;E</span>)</label>
+                <span id="val-delta-e" class="slider-pill">${state.mod4.deltaE.toFixed(1)}</span>
+              </div>
+              <input id="slider-delta-e" type="range" min="-12" max="12" step="0.5" value="${state.mod4.deltaE}" class="qg-slider" />
+            </div>
+            <button id="btn-mod4-rerun" type="button" class="btn btn-primary" style="width:100%; margin-top:0.65rem;">
+              Re-Run Transplant (12 Families)
+            </button>
+          `;
+          document.getElementById('slider-delta-e').addEventListener('input', (e) => {
+            state.mod4.deltaE = Number(e.target.value);
+            document.getElementById('val-delta-e').textContent = state.mod4.deltaE.toFixed(1);
+            runActiveModule(true, false);
+            renderAll();
+          });
+          document.getElementById('btn-mod4-rerun').addEventListener('click', () => {
+            runActiveModule(true, true);
+            renderAll();
+          });
+        }
+      }
+
+      function renderModule1Stats() {
+        const container = document.getElementById('mod1-stats');
+        if (!container || !state.dataMod1) return;
+        const d = state.dataMod1;
+        const unit = getCurrentTrait().unit;
+        const isDiscovery = state.mode === 'discovery' && !state.mysteryRevealed;
+
+        container.innerHTML = `
+          <div class="stat-tile">
+            <div class="stat-label">Clonal Mean (&mu;<sub>clonal</sub>)</div>
+            <div class="stat-val">${d.meanClonal.toFixed(2)} <span style="font-size:0.75rem;font-weight:500;">${unit}</span></div>
+            <div class="stat-note">N = 300 identical genotypes</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Outbred Mean (&mu;<sub>outbred</sub>)</div>
+            <div class="stat-val">${d.meanOutbred.toFixed(2)} <span style="font-size:0.75rem;font-weight:500;">${unit}</span></div>
+            <div class="stat-note">N = 300 wild genotypes</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Clonal Variance (s&sup2;<sub>clonal</sub>)</div>
+            <div class="stat-val" style="color:#047857;">${d.estVE.toFixed(2)}</div>
+            <div class="stat-note">Directly estimates V<sub>E</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Outbred Variance (s&sup2;<sub>outbred</sub>)</div>
+            <div class="stat-val" style="color:#0369a1;">${d.estVP.toFixed(2)}</div>
+            <div class="stat-note">Directly estimates V<sub>P</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Derived Genetic Var (V<sub>G</sub>)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : d.estVG.toFixed(2)}</div>
+            <div class="stat-note">V<sub>G</sub> = V<sub>P</sub> &minus; V<sub>E</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Broad-Sense H&sup2;</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : d.estH2.toFixed(3)}</div>
+            <div class="stat-note">H&sup2; = V<sub>G</sub> / V<sub>P</sub></div>
+          </div>
+        `;
+      }
+
+      function renderModule2Stats() {
+        const container = document.getElementById('mod2-stats');
+        const tbody = document.getElementById('mod2-sample-table');
+        if (!container || !state.dataMod2) return;
+        const d = state.dataMod2;
+        const isDiscovery = state.mode === 'discovery' && !state.mysteryRevealed;
+
+        container.innerHTML = `
+          <div class="stat-tile">
+            <div class="stat-label">Mid-Parent Var Var(P<sub>MP</sub>)</div>
+            <div class="stat-val">${d.varMP.toFixed(2)}</div>
+            <div class="stat-note">Equals &frac12; V<sub>P</sub> (&rArr; V<sub>P</sub> = ${d.estVP.toFixed(2)})</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Parent-Offspring Cov</div>
+            <div class="stat-val">${d.covOMP.toFixed(2)}</div>
+            <div class="stat-note">Cov(P<sub>O</sub>, P<sub>MP</sub>) = &frac12; V<sub>A</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">OLS Regression Slope (b)</div>
+            <div class="stat-val" style="color:#e11d48;">${d.slope.toFixed(3)}</div>
+            <div class="stat-note">b = Cov / Var(P<sub>MP</sub>) = h&sup2;</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Est. Additive Var (V<sub>A</sub>)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : d.estVA.toFixed(2)}</div>
+            <div class="stat-note">V<sub>A</sub> = h&sup2; &times; V<sub>P</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Est. (V<sub>D</sub> + V<sub>E</sub>)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : d.estVDplusVE.toFixed(2)}</div>
+            <div class="stat-note">V<sub>P</sub> &minus; V<sub>A</sub></div>
+          </div>
+        `;
+
+        if (tbody) {
+          tbody.innerHTML = d.pairs
+            .slice(0, 6)
+            .map(
+              (p) => `
+            <tr>
+              <td class="mono" style="font-weight:600;">${p.familyId}</td>
+              <td class="mono">${p.Ps.toFixed(1)}</td>
+              <td class="mono">${p.Pd.toFixed(1)}</td>
+              <td class="mono" style="font-weight:700;">${p.Pmp.toFixed(1)}</td>
+              <td class="mono" style="color:#0369a1;font-weight:700;">${p.Po.toFixed(1)}</td>
+            </tr>
+          `
+            )
+            .join('');
+        }
+      }
+
+      function renderModule3Stats() {
+        const container = document.getElementById('mod3-stats');
+        const genBadge = document.getElementById('mod3-gen-badge');
+        if (!container || !state.dataMod3) return;
+
+        const step = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+        const unit = getCurrentTrait().unit;
+        const isDiscovery = state.mode === 'discovery' && !state.mysteryRevealed;
+
+        if (genBadge) {
+          genBadge.textContent = `G${step.parentGen} → G${step.offspringGen}`;
+        }
+
+        container.innerHTML = `
+          <div class="stat-tile">
+            <div class="stat-label">Parental Mean (Z&#772;<sub>${step.parentGen}</sub>)</div>
+            <div class="stat-val">${step.zParent.toFixed(2)} <span style="font-size:0.75rem;">${unit}</span></div>
+            <div class="stat-note">N = 500 individuals</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Selected Breeders (Z&#772;<sub>S</sub>)</div>
+            <div class="stat-val" style="color:#b45309;">${step.zBreeder.toFixed(2)} <span style="font-size:0.75rem;">${unit}</span></div>
+            <div class="stat-note">Top ${state.mod3.cutoffPct}% (${step.breeders.length} breeders)</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Offspring Mean (Z&#772;<sub>${step.offspringGen}</sub>)</div>
+            <div class="stat-val" style="color:#047857;">${step.zOffspring.toFixed(2)} <span style="font-size:0.75rem;">${unit}</span></div>
+            <div class="stat-note">N = 500 offspring</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Selection Differential (S)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : `${step.S >= 0 ? '+' : ''}${step.S.toFixed(2)}`}</div>
+            <div class="stat-note">S = Z&#772;<sub>S</sub> &minus; Z&#772;<sub>${step.parentGen}</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Response (R)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : `${step.R >= 0 ? '+' : ''}${step.R.toFixed(2)}`}</div>
+            <div class="stat-note">R = Z&#772;<sub>${step.offspringGen}</sub> &minus; Z&#772;<sub>${step.parentGen}</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Realized Heritability (h&sup2;)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : step.realizedH2.toFixed(3)}</div>
+            <div class="stat-note">h&sup2; = R / S</div>
+          </div>
+        `;
+      }
+
+      function renderModule4Stats() {
+        const container = document.getElementById('mod4-stats');
+        const badge = document.getElementById('mod4-gxe-badge');
+        const anovaTbody = document.getElementById('mod4-anova-table');
+        if (!container || !state.dataMod4) return;
+
+        const d = state.dataMod4;
+        const unit = getCurrentTrait().unit;
+        const isDiscovery = state.mode === 'discovery' && !state.mysteryRevealed;
+
+        if (badge) {
+          badge.className = `badge ${d.sigGxE ? 'badge-rose' : 'badge-emerald'}`;
+          badge.textContent = `F_GxE = ${d.fGxE.toFixed(2)} (${d.sigGxE ? 'Significant G×E' : 'Parallel / No G×E'})`;
+        }
+
+        container.innerHTML = `
+          <div class="stat-tile">
+            <div class="stat-label">Lush Meadow Mean</div>
+            <div class="stat-val" style="color:#047857;">${d.meanEnv1.toFixed(2)} <span style="font-size:0.75rem;">${unit}</span></div>
+            <div class="stat-note">12 families &times; 15 sibs</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Arid Scrub Mean</div>
+            <div class="stat-val" style="color:#b45309;">${d.meanEnv2.toFixed(2)} <span style="font-size:0.75rem;">${unit}</span></div>
+            <div class="stat-note">12 families &times; 15 sibs</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Habitat Shift (&Delta;E)</div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : `${d.estDeltaE >= 0 ? '+' : ''}${d.estDeltaE.toFixed(2)}`}</div>
+            <div class="stat-note">Mean<sub>Arid</sub> &minus; Mean<sub>Lush</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Est. Family Genetic V<sub>G</sub></div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : d.estVGTotal.toFixed(2)}</div>
+            <div class="stat-note">2 &times; &sigma;&sup2;<sub>Family</sub></div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Est. Interaction V<sub>G&times;E</sub></div>
+            <div class="stat-val">${isDiscovery ? 'Solve Below' : d.estVGxE.toFixed(2)}</div>
+            <div class="stat-note">F = ${d.fGxE.toFixed(2)} (crit 1.82)</div>
+          </div>
+        `;
+
+        if (anovaTbody) {
+          anovaTbody.innerHTML = `
+            <tr>
+              <td style="font-weight:600;">Family (Genotype)</td>
+              <td class="mono">${d.dfFam}</td>
+              <td class="mono">${d.msFam.toFixed(2)}</td>
+              <td class="mono">&sigma;&sup2;<sub>Fam</sub> = ${d.estVFam.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">Environment (Habitat)</td>
+              <td class="mono">${d.dfEnv}</td>
+              <td class="mono">${d.msEnv.toFixed(2)}</td>
+              <td class="mono">&sigma;&sup2;<sub>Env</sub> = ${d.estVEnv.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;color:#be123c;">Family &times; Env (G&times;E)</td>
+              <td class="mono">${d.dfGxE}</td>
+              <td class="mono">${d.msGxE.toFixed(2)}</td>
+              <td class="mono" style="color:#be123c;font-weight:700;">&sigma;&sup2;<sub>G&times;E</sub> = ${d.estVGxE.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">Within-Family Error</td>
+              <td class="mono">${d.dfErr}</td>
+              <td class="mono">${d.msErr.toFixed(2)}</td>
+              <td class="mono">&sigma;&sup2;<sub>Err</sub> = ${d.estVError.toFixed(2)}</td>
+            </tr>
+          `;
+        }
+      }
+
+      // =======================================================================
+      // 8. DISCOVERY MODE CHECKER RENDERING & GRADING
+      // =======================================================================
+
+      function renderDiscoveryChecker() {
+        const sec = document.getElementById('discovery-checker-section');
+        const fieldsBox = document.getElementById('checker-fields-container');
+        const hintBox = document.getElementById('checker-hint-box');
+        const revealBox = document.getElementById('checker-reveal-box');
+        if (!sec || !fieldsBox) return;
+
+        if (state.mode !== 'discovery') {
+          sec.classList.add('hidden');
+          return;
+        }
+        sec.classList.remove('hidden');
+
+        hintBox.classList.toggle('hidden', !state.hintVisible);
+        revealBox.classList.toggle('hidden', !state.mysteryRevealed);
+
+        if (state.mysteryRevealed) {
+          const { VA, VD, VE, VGxE } = state.params;
+          const VG = VA + VD;
+          const VP = VG + VE + VGxE;
+          revealBox.innerHTML = `
+            <strong>True Underlying Simulation Parameters (${state.mysteryCode}):</strong><br/>
+            V_A = ${VA.toFixed(2)} | V_D = ${VD.toFixed(2)} | V_G = ${VG.toFixed(2)} | V_E = ${VE.toFixed(2)} | V_G×E = ${VGxE.toFixed(2)} | V_P = ${VP.toFixed(2)}<br/>
+            True Broad-Sense H² = ${(VG / VP).toFixed(3)} | True Narrow-Sense h² = ${(VA / VP).toFixed(3)}
+          `;
+        }
+
+        if (state.activeModule === 1) {
+          fieldsBox.innerHTML = `
+            <div class="check-field">
+              <label for="chk-m1-ve">Environmental Variance (V<sub>E</sub>)</label>
+              <input id="chk-m1-ve" type="number" step="0.1" placeholder="e.g. 8.0" class="check-input" />
+              <div id="st-m1-ve" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m1-vp">Total Phenotypic Variance (V<sub>P</sub>)</label>
+              <input id="chk-m1-vp" type="number" step="0.1" placeholder="e.g. 30.0" class="check-input" />
+              <div id="st-m1-vp" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m1-vg">Genetic Variance (V<sub>G</sub> = V<sub>P</sub> &minus; V<sub>E</sub>)</label>
+              <input id="chk-m1-vg" type="number" step="0.1" placeholder="e.g. 22.0" class="check-input" />
+              <div id="st-m1-vg" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m1-h2">Broad-Sense Heritability (H&sup2; = V<sub>G</sub> / V<sub>P</sub>)</label>
+              <input id="chk-m1-h2" type="number" step="0.01" placeholder="0.00 to 1.00" class="check-input" />
+              <div id="st-m1-h2" class="check-status"></div>
+            </div>
+          `;
+          hintBox.innerHTML = `
+            <strong>Step-by-Step Hint (Experiment 1):</strong><br/>
+            1. Because clonal rabbits share the exact same genotype (<span class="mono">V<sub>G</sub> = 0</span>), <span class="mono">V<sub>E</sub> = s&sup2;<sub>clonal</sub></span>.<br/>
+            2. Outbred variance equals <span class="mono">V<sub>P</sub> = s&sup2;<sub>outbred</sub></span>.<br/>
+            3. Subtract to find <span class="mono">V<sub>G</sub> = V<sub>P</sub> &minus; V<sub>E</sub></span>, then divide <span class="mono">H&sup2; = V<sub>G</sub> / V<sub>P</sub></span>.
+          `;
+        } else if (state.activeModule === 2) {
+          fieldsBox.innerHTML = `
+            <div class="check-field">
+              <label for="chk-m2-h2">Narrow-Sense Heritability (h&sup2; = slope)</label>
+              <input id="chk-m2-h2" type="number" step="0.01" placeholder="0.00 to 1.00" class="check-input" />
+              <div id="st-m2-h2" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m2-va">Additive Genetic Variance (V<sub>A</sub> = h&sup2; &times; V<sub>P</sub>)</label>
+              <input id="chk-m2-va" type="number" step="0.1" placeholder="e.g. 16.0" class="check-input" />
+              <div id="st-m2-va" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m2-vdve">Non-Additive + Env Var (V<sub>D</sub> + V<sub>E</sub>)</label>
+              <input id="chk-m2-vdve" type="number" step="0.1" placeholder="V_P - V_A" class="check-input" />
+              <div id="st-m2-vdve" class="check-status"></div>
+            </div>
+          `;
+          hintBox.innerHTML = `
+            <strong>Step-by-Step Hint (Experiment 2):</strong><br/>
+            1. Narrow-sense heritability equals the Mid-Parent regression slope: <span class="mono">h&sup2; = Cov(P<sub>O</sub>, P<sub>MP</sub>) / Var(P<sub>MP</sub>)</span>.<br/>
+            2. Total phenotypic variance is <span class="mono">V<sub>P</sub> = 2 &times; Var(P<sub>MP</sub>)</span>, so <span class="mono">V<sub>A</sub> = h&sup2; &times; V<sub>P</sub></span>.<br/>
+            3. Everything else is dominance plus environment: <span class="mono">V<sub>D</sub> + V<sub>E</sub> = V<sub>P</sub> &minus; V<sub>A</sub></span>.
+          `;
+        } else if (state.activeModule === 3) {
+          const step = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+          fieldsBox.innerHTML = `
+            <div class="check-field">
+              <label for="chk-m3-s">Selection Differential (S = Z&#772;<sub>S</sub> &minus; Z&#772;<sub>${step.parentGen}</sub>)</label>
+              <input id="chk-m3-s" type="number" step="0.05" placeholder="e.g. 6.50" class="check-input" />
+              <div id="st-m3-s" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m3-r">Response to Selection (R = Z&#772;<sub>${step.offspringGen}</sub> &minus; Z&#772;<sub>${step.parentGen}</sub>)</label>
+              <input id="chk-m3-r" type="number" step="0.05" placeholder="e.g. 3.25" class="check-input" />
+              <div id="st-m3-r" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m3-h2">Realized Heritability (h&sup2; = R / S)</label>
+              <input id="chk-m3-h2" type="number" step="0.01" placeholder="0.00 to 1.00" class="check-input" />
+              <div id="st-m3-h2" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m3-z2">Predicted Next Mean (Z&#772;<sub>${step.offspringGen + 1}</sub> if same S)</label>
+              <input id="chk-m3-z2" type="number" step="0.1" placeholder="Z̄_${step.offspringGen} + R" class="check-input" />
+              <div id="st-m3-z2" class="check-status"></div>
+            </div>
+          `;
+          hintBox.innerHTML = `
+            <strong>Step-by-Step Hint (Experiment 3):</strong><br/>
+            1. Compute <span class="mono">S = Z&#772;<sub>S</sub> &minus; Z&#772;<sub>${step.parentGen}</sub></span> and <span class="mono">R = Z&#772;<sub>${step.offspringGen}</sub> &minus; Z&#772;<sub>${step.parentGen}</sub></span>.<br/>
+            2. From the Breeder's Equation (<span class="mono">R = h&sup2; S</span>), divide <span class="mono">h&sup2; = R / S</span>.<br/>
+            3. Applying the same selection differential <span class="mono">S</span> again yields <span class="mono">Z&#772;<sub>${step.offspringGen + 1}</sub> = Z&#772;<sub>${step.offspringGen}</sub> + h&sup2; S</span>.
+          `;
+        } else if (state.activeModule === 4) {
+          fieldsBox.innerHTML = `
+            <div class="check-field">
+              <label for="chk-m4-de">Habitat Shift (&Delta;E = Mean<sub>Arid</sub> &minus; Mean<sub>Lush</sub>)</label>
+              <input id="chk-m4-de" type="number" step="0.1" placeholder="e.g. -5.5" class="check-input" />
+              <div id="st-m4-de" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m4-vg">Family Genetic Variance (V<sub>G</sub> = 2 &sigma;&sup2;<sub>Fam</sub>)</label>
+              <input id="chk-m4-vg" type="number" step="0.1" placeholder="e.g. 12.0" class="check-input" />
+              <div id="st-m4-vg" class="check-status"></div>
+            </div>
+            <div class="check-field">
+              <label for="chk-m4-gxe">Significant G&times;E Interaction?</label>
+              <select id="chk-m4-gxe" class="check-input" style="font-family:var(--font-sans);">
+                <option value="">-- Choose Conclusion --</option>
+                <option value="yes">Yes — Non-Parallel / Crossing Norms (F &gt; 1.82)</option>
+                <option value="no">No — Parallel Reaction Norms (F &le; 1.82)</option>
+              </select>
+              <div id="st-m4-gxe" class="check-status"></div>
+            </div>
+          `;
+          hintBox.innerHTML = `
+            <strong>Step-by-Step Hint (Experiment 4):</strong><br/>
+            1. Habitat shift <span class="mono">&Delta;E = Mean<sub>Arid Scrub</sub> &minus; Mean<sub>Lush Meadow</sub></span>.<br/>
+            2. Because full siblings share half their genes, total genetic variance among families is <span class="mono">V<sub>G</sub> &approx; 2 &times; &sigma;&sup2;<sub>Fam</sub></span> (see ANOVA table).<br/>
+            3. Inspect the Reaction Norm plot and ANOVA <span class="mono">F<sub>G&times;E</sub></span>: if <span class="mono">F &gt; 1.82</span> and lines cross/diverge, <span class="mono">G&times;E</span> is significant!
+          `;
+        }
+      }
+
+      function gradeNumericField(inputId, statusId, targetVal, absFloor = 0.05) {
+        const inp = document.getElementById(inputId);
+        const st = document.getElementById(statusId);
+        if (!inp || !st) return false;
+        const raw = inp.value.trim();
+        if (raw === '') {
+          st.className = 'check-status status-err';
+          st.textContent = 'Enter a numeric value';
+          return false;
+        }
+        const val = Number(raw);
+        const tol = Math.max(absFloor, Math.abs(targetVal) * 0.14);
+        const diff = Math.abs(val - targetVal);
+        if (diff <= tol) {
+          st.className = 'check-status status-ok';
+          st.textContent = `✓ Correct! (Est: ${targetVal.toFixed(2)})`;
+          return true;
+        } else if (diff <= tol * 2) {
+          st.className = 'check-status status-close';
+          st.textContent = `~ Close! Check rounding (Est: ${targetVal.toFixed(2)})`;
+          return false;
+        } else {
+          st.className = 'check-status status-err';
+          st.textContent = `✗ Off target — see Hint`;
+          return false;
+        }
+      }
+
+      function checkDiscoveryAnswers() {
+        let allCorrect = false;
+        if (state.activeModule === 1 && state.dataMod1) {
+          const d = state.dataMod1;
+          const c1 = gradeNumericField('chk-m1-ve', 'st-m1-ve', d.estVE, 0.8);
+          const c2 = gradeNumericField('chk-m1-vp', 'st-m1-vp', d.estVP, 1.0);
+          const c3 = gradeNumericField('chk-m1-vg', 'st-m1-vg', d.estVG, 1.0);
+          const c4 = gradeNumericField('chk-m1-h2', 'st-m1-h2', d.estH2, 0.06);
+          allCorrect = c1 && c2 && c3 && c4;
+        } else if (state.activeModule === 2 && state.dataMod2) {
+          const d = state.dataMod2;
+          const c1 = gradeNumericField('chk-m2-h2', 'st-m2-h2', d.slope, 0.06);
+          const c2 = gradeNumericField('chk-m2-va', 'st-m2-va', d.estVA, 1.2);
+          const c3 = gradeNumericField('chk-m2-vdve', 'st-m2-vdve', d.estVDplusVE, 1.2);
+          allCorrect = c1 && c2 && c3;
+        } else if (state.activeModule === 3 && state.dataMod3) {
+          const s = state.dataMod3.steps[state.dataMod3.steps.length - 1];
+          const c1 = gradeNumericField('chk-m3-s', 'st-m3-s', s.S, 0.25);
+          const c2 = gradeNumericField('chk-m3-r', 'st-m3-r', s.R, 0.25);
+          const c3 = gradeNumericField('chk-m3-h2', 'st-m3-h2', s.realizedH2, 0.07);
+          const c4 = gradeNumericField('chk-m3-z2', 'st-m3-z2', s.zOffspring + s.R, 0.4);
+          allCorrect = c1 && c2 && c3 && c4;
+        } else if (state.activeModule === 4 && state.dataMod4) {
+          const d = state.dataMod4;
+          const c1 = gradeNumericField('chk-m4-de', 'st-m4-de', d.estDeltaE, 0.4);
+          const c2 = gradeNumericField('chk-m4-vg', 'st-m4-vg', d.estVGTotal, 1.5);
+          const sel = document.getElementById('chk-m4-gxe');
+          const st = document.getElementById('st-m4-gxe');
+          const expected = d.sigGxE ? 'yes' : 'no';
+          let c3 = false;
+          if (sel && st) {
+            if (sel.value === expected) {
+              st.className = 'check-status status-ok';
+              st.textContent = `✓ Correct! (F = ${d.fGxE.toFixed(2)})`;
+              c3 = true;
+            } else {
+              st.className = 'check-status status-err';
+              st.textContent = '✗ Check Reaction Norms & F-stat';
+            }
+          }
+          allCorrect = c1 && c2 && c3;
+        }
+
+        if (allCorrect) {
+          showToast('Excellent! All equations and variance components verified.');
+        } else {
+          showToast('Some fields need adjustment—check the inline feedback or Hint.');
+        }
+      }
+
+      // =======================================================================
+      // 9. MASTER RENDER & EVENT WIRING
+      // =======================================================================
+
+      function renderAll() {
+        const trait = getCurrentTrait();
+        const muBadge = document.getElementById('trait-mu-badge');
+        if (muBadge) muBadge.textContent = `μ = ${trait.mu.toFixed(1)} ${trait.unit}`;
+
+        // Toggle Sandbox vs Discovery sidebar cards
+        const isSandbox = state.mode === 'sandbox';
+        document.getElementById('sandbox-params-card').classList.toggle('hidden', !isSandbox);
+        document.getElementById('algebraic-bridge-card').classList.toggle('hidden', !isSandbox);
+        document.getElementById('discovery-params-card').classList.toggle('hidden', isSandbox);
+
+        // Toggle active module section
+        for (let m = 1; m <= 4; m++) {
+          const sec = document.getElementById(`view-mod-${m}`);
+          if (sec) sec.classList.toggle('hidden', state.activeModule !== m);
+        }
+
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          const m = Number(btn.getAttribute('data-module'));
+          btn.classList.toggle('active', m === state.activeModule);
+        });
+
+        renderLiveAlgebraicBridge();
+        renderDiscoveryChecker();
+
+        if (state.activeModule === 1) {
+          renderModule1Stats();
+          drawModule1Histogram();
+          drawModule1SidePanels();
+        } else if (state.activeModule === 2) {
+          renderModule2Stats();
+          drawModule2Scatter();
+        } else if (state.activeModule === 3) {
+          renderModule3Stats();
+          drawModule3Distributions();
+          drawModule3Trajectory();
+        } else if (state.activeModule === 4) {
+          renderModule4Stats();
+          drawModule4ReactionNorms();
+          drawModule4AnovaBar();
+        }
+      }
+
+      function syncSlidersToParams() {
+        const map = [
+          ['va', 'VA'],
+          ['vd', 'VD'],
+          ['ve', 'VE'],
+          ['vgxe', 'VGxE'],
+        ];
+        for (const [domId, key] of map) {
+          const sl = document.getElementById(`slider-${domId}`);
+          const pill = document.getElementById(`val-${domId}`);
+          if (sl && pill) {
+            sl.value = state.params[key];
+            pill.textContent = state.params[key].toFixed(1);
+          }
+        }
+      }
+
+      function applyMysteryScenario(key) {
+        state.mysteryKey = key;
+        state.mysteryRevealed = false;
+        state.hintVisible = false;
+
+        if (key === 'random') {
+          const randVA = Math.floor(Math.random() * 26) + 2;
+          const randVD = Math.floor(Math.random() * 18);
+          const randVE = Math.floor(Math.random() * 24) + 4;
+          const randVGxE = Math.random() < 0.45 ? Math.floor(Math.random() * 20) + 8 : 0;
+          const code = `MYST-${Math.floor(1000 + Math.random() * 9000)}`;
+          state.mysteryCode = code;
+          state.params = { VA: randVA, VD: randVD, VE: randVE, VGxE: randVGxE };
+          state.mod4.deltaE = Number((Math.random() * 14 - 7).toFixed(1));
+        } else {
+          const sc = MYSTERY_SCENARIOS[key];
+          state.mysteryCode = sc.code;
+          state.params = { VA: sc.VA, VD: sc.VD, VE: sc.VE, VGxE: sc.VGxE };
+          state.mod4.deltaE = sc.deltaE;
+        }
+
+        const pill = document.getElementById('mystery-code-pill');
+        if (pill) pill.textContent = state.mysteryCode;
+
+        runActiveModule(true, true);
+        renderModuleControls();
+        renderAll();
+      }
+
+      function showToast(msg) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = msg;
+        container.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(6px)';
+          setTimeout(() => el.remove(), 220);
+        }, 2800);
+      }
+
+      function setupInteractiveHoverTooltips() {
+        const tooltip = document.getElementById('chart-tooltip');
+        if (!tooltip) return;
+
+        // Module 1 Histogram Tooltip
+        const c1 = document.getElementById('canvas-mod1-hist');
+        if (c1) {
+          c1.addEventListener('mousemove', (e) => {
+            const info = state.hoverMaps['canvas-mod1-hist'];
+            if (!info) return;
+            const rect = c1.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            if (mx < info.pad.left || mx > info.pad.left + info.plotW || my < info.pad.top || my > info.pad.top + info.plotH) {
+              tooltip.style.display = 'none';
+              return;
+            }
+            const idx = clamp(Math.floor(((mx - info.pad.left) / info.plotW) * info.numBins), 0, info.numBins - 1);
+            const lo = info.minV + idx * info.binW;
+            const hi = lo + info.binW;
+            tooltip.innerHTML = `
+              <div style="font-weight:700;margin-bottom:2px;">Bin [${lo.toFixed(1)}, ${hi.toFixed(1)}) ${info.unit}</div>
+              <div class="mono" style="color:#34d399;">Clonal (V_G=0): ${info.clonalBins[idx]}</div>
+              <div class="mono" style="color:#38bdf8;">Outbred (V_G+V_E): ${info.outbredBins[idx]}</div>
+            `;
+            tooltip.style.left = `${Math.min(window.innerWidth - 190, e.clientX + 12)}px`;
+            tooltip.style.top = `${Math.max(10, e.clientY - 12)}px`;
+            tooltip.style.display = 'block';
+          });
+          c1.addEventListener('mouseleave', () => (tooltip.style.display = 'none'));
+        }
+
+        // Module 2 Scatter Tooltip
+        const c2 = document.getElementById('canvas-mod2-scatter');
+        if (c2) {
+          c2.addEventListener('mousemove', (e) => {
+            const info = state.hoverMaps['canvas-mod2-scatter'];
+            if (!info) return;
+            const rect = c2.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            let best = null;
+            let bestDist = 64;
+            for (const pt of info.screenPts) {
+              const d2 = (pt.cx - mx) ** 2 + (pt.cy - my) ** 2;
+              if (d2 < bestDist) {
+                bestDist = d2;
+                best = pt.pair;
+              }
+            }
+            if (!best) {
+              tooltip.style.display = 'none';
+              return;
+            }
+            tooltip.innerHTML = `
+              <div style="font-weight:700;margin-bottom:2px;">${best.familyId}</div>
+              <div class="mono">Sire: ${best.Ps.toFixed(2)} | Dam: ${best.Pd.toFixed(2)}</div>
+              <div class="mono" style="color:#fbbf24;">Mid-Parent: ${best.Pmp.toFixed(2)} ${info.unit}</div>
+              <div class="mono" style="color:#38bdf8;">Offspring: ${best.Po.toFixed(2)} ${info.unit}</div>
+            `;
+            tooltip.style.left = `${Math.min(window.innerWidth - 210, e.clientX + 12)}px`;
+            tooltip.style.top = `${Math.max(10, e.clientY - 12)}px`;
+            tooltip.style.display = 'block';
+          });
+          c2.addEventListener('mouseleave', () => (tooltip.style.display = 'none'));
+        }
+
+        // Module 4 Reaction Norm Tooltip
+        const c4 = document.getElementById('canvas-mod4-norms');
+        if (c4) {
+          c4.addEventListener('mousemove', (e) => {
+            const info = state.hoverMaps['canvas-mod4-norms'];
+            if (!info) return;
+            const rect = c4.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            let bestFam = null;
+            let bestDist = 144;
+            for (const seg of info.hitSegments) {
+              const d1 = (seg.x1 - mx) ** 2 + (seg.y1 - my) ** 2;
+              const d2 = (seg.x2 - mx) ** 2 + (seg.y2 - my) ** 2;
+              const xm = (seg.x1 + seg.x2) / 2;
+              const ym = (seg.y1 + seg.y2) / 2;
+              const dm = (xm - mx) ** 2 + (ym - my) ** 2;
+              const minD = Math.min(d1, d2, dm);
+              if (minD < bestDist) {
+                bestDist = minD;
+                bestFam = seg.fam;
+              }
+            }
+            if (!bestFam) {
+              tooltip.style.display = 'none';
+              return;
+            }
+            tooltip.innerHTML = `
+              <div style="font-weight:700;margin-bottom:2px;">Full-Sib Family ${bestFam.familyId}</div>
+              <div class="mono" style="color:#34d399;">Lush Meadow: ${bestFam.mean1.toFixed(2)} ± ${bestFam.se1.toFixed(2)} ${info.unit}</div>
+              <div class="mono" style="color:#fbbf24;">Arid Scrub: ${bestFam.mean2.toFixed(2)} ± ${bestFam.se2.toFixed(2)} ${info.unit}</div>
+              <div class="mono">Plasticity Slope: ${bestFam.slope >= 0 ? '+' : ''}${bestFam.slope.toFixed(2)}</div>
+            `;
+            tooltip.style.left = `${Math.min(window.innerWidth - 230, e.clientX + 12)}px`;
+            tooltip.style.top = `${Math.max(10, e.clientY - 12)}px`;
+            tooltip.style.display = 'block';
+          });
+          c4.addEventListener('mouseleave', () => (tooltip.style.display = 'none'));
+        }
+      }
+
+      function bindEvents() {
+        // Mode Switcher
+        const btnSandbox = document.getElementById('btn-mode-sandbox');
+        const btnDiscovery = document.getElementById('btn-mode-discovery');
+
+        btnSandbox.addEventListener('click', () => {
+          if (state.mode === 'sandbox') return;
+          state.mode = 'sandbox';
+          state.mysteryRevealed = false;
+          btnSandbox.classList.add('active-sandbox');
+          btnDiscovery.classList.remove('active-discovery');
+          const trait = getCurrentTrait();
+          state.params = { VA: trait.VA, VD: trait.VD, VE: trait.VE, VGxE: trait.VGxE };
+          syncSlidersToParams();
+          runActiveModule(true, true);
+          renderModuleControls();
+          renderAll();
+          showToast('Switched to Sandbox Mode — all true variance sliders unlocked.');
+        });
+
+        btnDiscovery.addEventListener('click', () => {
+          if (state.mode === 'discovery') return;
+          state.mode = 'discovery';
+          btnDiscovery.classList.add('active-discovery');
+          btnSandbox.classList.remove('active-sandbox');
+          applyMysteryScenario(state.mysteryKey);
+          showToast('Switched to Discovery Mode — derive hidden parameters from experimental data!');
+        });
+
+        // Trait Selector
+        document.getElementById('select-trait').addEventListener('change', (e) => {
+          state.traitKey = e.target.value;
+          const trait = getCurrentTrait();
+          if (state.mode === 'sandbox') {
+            state.params = { VA: trait.VA, VD: trait.VD, VE: trait.VE, VGxE: trait.VGxE };
+            state.mod4.deltaE = trait.deltaE;
+            syncSlidersToParams();
+          }
+          runActiveModule(true, true);
+          renderModuleControls();
+          renderAll();
+        });
+
+        // Sandbox Variance Sliders
+        const sliderBindings = [
+          ['va', 'VA'],
+          ['vd', 'VD'],
+          ['ve', 'VE'],
+          ['vgxe', 'VGxE'],
+        ];
+        for (const [domId, key] of sliderBindings) {
+          document.getElementById(`slider-${domId}`).addEventListener('input', (e) => {
+            const val = Number(e.target.value);
+            state.params[key] = val;
+            document.getElementById(`val-${domId}`).textContent = val.toFixed(1);
+            runActiveModule(false, false);
+            renderAll();
+          });
+        }
+
+        document.getElementById('btn-reset-params').addEventListener('click', () => {
+          const trait = getCurrentTrait();
+          state.params = { VA: trait.VA, VD: trait.VD, VE: trait.VE, VGxE: trait.VGxE };
+          state.mod4.deltaE = trait.deltaE;
+          syncSlidersToParams();
+          runActiveModule(true, true);
+          renderModuleControls();
+          renderAll();
+          showToast('Reset variance parameters to trait defaults.');
+        });
+
+        document.getElementById('btn-run-sandbox').addEventListener('click', () => {
+          runActiveModule(true, true);
+          renderAll();
+          showToast('Generated fresh individual cohort under current parameters.');
+        });
+
+        // Discovery Mode Scenario Controls
+        document.getElementById('select-mystery').addEventListener('change', (e) => {
+          applyMysteryScenario(e.target.value);
+        });
+
+        document.getElementById('btn-new-random-mystery').addEventListener('click', () => {
+          document.getElementById('select-mystery').value = 'random';
+          applyMysteryScenario('random');
+          showToast(`Generated new random mystery scenario (${state.mysteryCode}).`);
+        });
+
+        document.getElementById('btn-resample-mystery').addEventListener('click', () => {
+          state.mysteryRevealed = false;
+          runActiveModule(true, true);
+          renderAll();
+          showToast('Sampled a new experimental cohort for the current mystery scenario.');
+        });
+
+        // 4 Module Tabs
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const mod = Number(btn.getAttribute('data-module'));
+            if (state.activeModule === mod) return;
+            state.activeModule = mod;
+            state.hintVisible = false;
+            runActiveModule(true, true);
+            renderModuleControls();
+            renderAll();
+          });
+        });
+
+        // Module 3 Advance & Reset
+        document.getElementById('btn-mod3-advance').addEventListener('click', () => {
+          advanceModule3Generation();
+          recordSummaryLogRow();
+          renderAll();
+        });
+
+        document.getElementById('btn-mod3-reset').addEventListener('click', () => {
+          runModule3(true);
+          const step = state.dataMod3.steps[0];
+          state.activeIndividuals = [...step.parents, ...step.offspring];
+          recordSummaryLogRow();
+          renderAll();
+          showToast('Reset selection experiment to Generation G0.');
+        });
+
+        // Discovery Checker Buttons
+        document.getElementById('btn-check-answers').addEventListener('click', checkDiscoveryAnswers);
+        document.getElementById('btn-toggle-hint').addEventListener('click', () => {
+          state.hintVisible = !state.hintVisible;
+          renderDiscoveryChecker();
+        });
+        document.getElementById('btn-reveal-truth').addEventListener('click', () => {
+          state.mysteryRevealed = !state.mysteryRevealed;
+          renderAll();
+        });
+
+        // Global CSV & Log Buttons
+        document.getElementById('btn-export-indiv-csv').addEventListener('click', exportIndividualCSV);
+        document.getElementById('btn-export-summary-csv').addEventListener('click', exportSummaryCSV);
+        document.getElementById('btn-log-snapshot').addEventListener('click', () => {
+          recordSummaryLogRow();
+          showToast('Logged current experiment snapshot.');
+        });
+        document.getElementById('btn-clear-log').addEventListener('click', () => {
+          state.summaryLog = [];
+          state.runCount = 0;
+          renderSummaryLog();
+        });
+
+        // Guide Modal
+        const modal = document.getElementById('guide-modal');
+        document.getElementById('btn-open-guide').addEventListener('click', () => modal.classList.add('open'));
+        document.getElementById('btn-close-guide').addEventListener('click', () => modal.classList.remove('open'));
+        document.getElementById('btn-close-guide-foot').addEventListener('click', () => modal.classList.remove('open'));
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.remove('open');
+        });
+      }
+
+      // =======================================================================
+      // 10. INITIALIZATION & WINDOW RESIZE
+      // =======================================================================
+      window.addEventListener('load', () => {
+        bindEvents();
+        setupInteractiveHoverTooltips();
+        syncSlidersToParams();
+        renderModuleControls();
+        runActiveModule(true, true);
+        renderAll();
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => renderAll(), 80);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
